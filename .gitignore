@@ -1,14 +1,31 @@
-*.iml
-.gradle
-/local.properties
-/.idea
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+# Gradle
+.gradle/
+build/
+app/build/
+
+# Local configuration
 local.properties
-app/build
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.hprof
+
+# Kotlin
+.kotlin/
+
+# Android
+captures/
+.externalNativeBuild/
+.cxx/
 *.apk
 *.ap_
 *.aab
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
