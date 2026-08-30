@@ -69,11 +69,37 @@ fun SettingsScreen(
 ) {
     val settings = viewModel.settings
 
-    // This screen renders many rows by reading settings through plain getters at
-    // composition time, so subscribe to the change counter here. When any setting
-    // is written, this scope recomposes and re-reads those getters immediately.
-    val settingsChanged by viewModel.settings.settingsChanged.collectAsState()
-    remember(settingsChanged) { }
+    // Subscribe to the settings change counter. Every write recomposes this screen;
+    // the derived values below are also keyed on it so they re-compute (and update
+    // the rows that read them) even if plain getter re-reads were skipped.
+    val settingsVersion by viewModel.settings.settingsChanged.collectAsState()
+
+    val autoLocation by remember(settingsVersion) { mutableStateOf(settings.isAutomaticLocation) }
+    val arabicNumerals by remember(settingsVersion) { mutableStateOf(settings.useArabicNumerals) }
+    val masterNotification by remember(settingsVersion) { mutableStateOf(settings.isMasterNotificationEnabled) }
+    val fajrNotif by remember(settingsVersion) { mutableStateOf(settings.isFajrNotificationEnabled) }
+    val dhuhrNotif by remember(settingsVersion) { mutableStateOf(settings.isDhuhrNotificationEnabled) }
+    val asrNotif by remember(settingsVersion) { mutableStateOf(settings.isAsrNotificationEnabled) }
+    val maghribNotif by remember(settingsVersion) { mutableStateOf(settings.isMaghribNotificationEnabled) }
+    val ishaNotif by remember(settingsVersion) { mutableStateOf(settings.isIshaNotificationEnabled) }
+    val silentAlerts by remember(settingsVersion) { mutableStateOf(settings.isCustomSoundEnabled) }
+    val reminderDelay by remember(settingsVersion) { mutableStateOf(settings.reminderDelayMinutes) }
+    val showTranslation by remember(settingsVersion) { mutableStateOf(settings.showTasbihTranslation) }
+    val hapticFeedback by remember(settingsVersion) { mutableStateOf(settings.isHapticFeedbackEnabled) }
+    val themeLabel by remember(settingsVersion) { mutableStateOf(settings.appTheme.replaceFirstChar { it.uppercase() }) }
+    val appThemeValue by remember(settingsVersion) { mutableStateOf(settings.appTheme) }
+    val hijriAdjustmentValue by remember(settingsVersion) { mutableStateOf(settings.hijriAdjustment) }
+    val locationName by remember(settingsVersion) { mutableStateOf(settings.locationName) }
+    val latitudeValue by remember(settingsVersion) { mutableStateOf(settings.latitude) }
+    val longitudeValue by remember(settingsVersion) { mutableStateOf(settings.longitude) }
+    val calcMethodValue by remember(settingsVersion) { mutableStateOf(settings.calculationMethod) }
+    val madhabValue by remember(settingsVersion) { mutableStateOf(settings.madhab) }
+    val highLatValue by remember(settingsVersion) { mutableStateOf(settings.highLatitudeRule) }
+    val adjFajr by remember(settingsVersion) { mutableStateOf(settings.adjustmentFajr) }
+    val adjDhuhr by remember(settingsVersion) { mutableStateOf(settings.adjustmentDhuhr) }
+    val adjAsr by remember(settingsVersion) { mutableStateOf(settings.adjustmentAsr) }
+    val adjMaghrib by remember(settingsVersion) { mutableStateOf(settings.adjustmentMaghrib) }
+    val adjIsha by remember(settingsVersion) { mutableStateOf(settings.adjustmentIsha) }
 
     var showCalcMethodDialog by remember { mutableStateOf(false) }
     var showMadhabDialog by remember { mutableStateOf(false) }
@@ -125,8 +151,8 @@ fun SettingsScreen(
             item {
                 SettingsToggleRow(
                     title = "Automatic GPS Location",
-                    subtitle = if (settings.isAutomaticLocation) "Detect automatically via GPS" else "Custom/Selected town active",
-                    checked = settings.isAutomaticLocation,
+                    subtitle = if (autoLocation) "Detect automatically via GPS" else "Custom/Selected town active",
+                    checked = autoLocation,
                     onCheckedChange = { isAuto ->
                         settings.isAutomaticLocation = isAuto
                         if (isAuto) {
@@ -142,7 +168,7 @@ fun SettingsScreen(
             item {
                 SettingsClickableRow(
                     title = "Active Location Coordinates",
-                    subtitle = "${settings.locationName} (${String.format("%.4f", settings.latitude)}, ${String.format("%.4f", settings.longitude)})",
+                    subtitle = "$locationName (${String.format("%.4f", latitudeValue)}, ${String.format("%.4f", longitudeValue)})",
                     onClick = { showLocationPickerSheet = true }
                 )
             }
@@ -155,7 +181,7 @@ fun SettingsScreen(
             item {
                 SettingsClickableRow(
                     title = "Calculation Method",
-                    subtitle = PrayerCalculator.CALCULATION_METHOD_NAMES.getOrElse(settings.calculationMethod) { "Default" },
+                    subtitle = PrayerCalculator.CALCULATION_METHOD_NAMES.getOrElse(calcMethodValue) { "Default" },
                     onClick = { showCalcMethodDialog = true }
                 )
             }
@@ -163,7 +189,7 @@ fun SettingsScreen(
             item {
                 SettingsClickableRow(
                     title = "Madhab (Asr shadow)",
-                    subtitle = PrayerCalculator.MADHAB_NAMES.getOrElse(settings.madhab) { "Shafi'i, Maliki, Hanbali (Standard)" },
+                    subtitle = PrayerCalculator.MADHAB_NAMES.getOrElse(madhabValue) { "Shafi'i, Maliki, Hanbali (Standard)" },
                     onClick = { showMadhabDialog = true }
                 )
             }
@@ -171,7 +197,7 @@ fun SettingsScreen(
             item {
                 SettingsClickableRow(
                     title = "High-Latitude Rule",
-                    subtitle = PrayerCalculator.HIGH_LATITUDE_RULE_NAMES.getOrElse(settings.highLatitudeRule) { "Middle of the Night" },
+                    subtitle = PrayerCalculator.HIGH_LATITUDE_RULE_NAMES.getOrElse(highLatValue) { "Middle of the Night" },
                     onClick = { showHighLatDialog = true }
                 )
             }
@@ -179,7 +205,7 @@ fun SettingsScreen(
             item {
                 SettingsClickableRow(
                     title = "Manual Adjustments",
-                    subtitle = "Fajr: ${formatOffset(settings.adjustmentFajr)}, Dhuhr: ${formatOffset(settings.adjustmentDhuhr)}, Asr: ${formatOffset(settings.adjustmentAsr)}, Maghrib: ${formatOffset(settings.adjustmentMaghrib)}, Isha: ${formatOffset(settings.adjustmentIsha)}",
+                    subtitle = "Fajr: ${formatOffset(adjFajr)}, Dhuhr: ${formatOffset(adjDhuhr)}, Asr: ${formatOffset(adjAsr)}, Maghrib: ${formatOffset(adjMaghrib)}, Isha: ${formatOffset(adjIsha)}",
                     onClick = { showManualAdjustDialog = true }
                 )
             }
@@ -200,8 +226,8 @@ fun SettingsScreen(
             item {
                 SettingsToggleRow(
                     title = "Arabic Numerals (١، ٢، ٣)",
-                    subtitle = if (settings.useArabicNumerals) "Displaying dates in Eastern Arabic digits" else "Displaying standard Western digits (1, 2, 3)",
-                    checked = settings.useArabicNumerals,
+                    subtitle = if (arabicNumerals) "Displaying dates in Eastern Arabic digits" else "Displaying standard Western digits (1, 2, 3)",
+                    checked = arabicNumerals,
                     onCheckedChange = {
                         settings.useArabicNumerals = it
                         refreshKey++
@@ -232,7 +258,7 @@ fun SettingsScreen(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             listOf(-2, -1, 0, 1, 2).forEach { offset ->
-                                val isSelected = settings.hijriAdjustment == offset
+                                val isSelected = hijriAdjustmentValue == offset
                                 val label = when {
                                     offset == 0 -> "0 (Default)"
                                     offset > 0 -> "+$offset d"
@@ -267,7 +293,7 @@ fun SettingsScreen(
                 SettingsToggleRow(
                     title = "Enable Notifications",
                     subtitle = "Receive reminders at prayer times",
-                    checked = settings.isMasterNotificationEnabled,
+                    checked = masterNotification,
                     onCheckedChange = {
                         settings.isMasterNotificationEnabled = it
                         viewModel.onSettingsChanged()
@@ -276,7 +302,7 @@ fun SettingsScreen(
                 )
             }
 
-            if (settings.isMasterNotificationEnabled) {
+            if (masterNotification) {
                 item {
                     Card(
                         shape = RoundedCornerShape(16.dp),
@@ -290,27 +316,27 @@ fun SettingsScreen(
                             )
                             Spacer(modifier = Modifier.height(6.dp))
 
-                            PrayerReminderToggle("Fajr", settings.isFajrNotificationEnabled) {
+                            PrayerReminderToggle("Fajr", fajrNotif) {
                                 settings.isFajrNotificationEnabled = it
                                 viewModel.onSettingsChanged()
                                 refreshKey++
                             }
-                            PrayerReminderToggle("Dhuhr", settings.isDhuhrNotificationEnabled) {
+                            PrayerReminderToggle("Dhuhr", dhuhrNotif) {
                                 settings.isDhuhrNotificationEnabled = it
                                 viewModel.onSettingsChanged()
                                 refreshKey++
                             }
-                            PrayerReminderToggle("Asr", settings.isAsrNotificationEnabled) {
+                            PrayerReminderToggle("Asr", asrNotif) {
                                 settings.isAsrNotificationEnabled = it
                                 viewModel.onSettingsChanged()
                                 refreshKey++
                             }
-                            PrayerReminderToggle("Maghrib", settings.isMaghribNotificationEnabled) {
+                            PrayerReminderToggle("Maghrib", maghribNotif) {
                                 settings.isMaghribNotificationEnabled = it
                                 viewModel.onSettingsChanged()
                                 refreshKey++
                             }
-                            PrayerReminderToggle("Isha", settings.isIshaNotificationEnabled) {
+                            PrayerReminderToggle("Isha", ishaNotif) {
                                 settings.isIshaNotificationEnabled = it
                                 viewModel.onSettingsChanged()
                                 refreshKey++
@@ -326,13 +352,13 @@ fun SettingsScreen(
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Text(
-                                text = "Follow-up Reminder: ${settings.reminderDelayMinutes} min after",
+                                text = "Follow-up Reminder: $reminderDelay min after",
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.SemiBold
                             )
                             Spacer(modifier = Modifier.height(6.dp))
                             Slider(
-                                value = settings.reminderDelayMinutes.toFloat(),
+                                value = reminderDelay.toFloat(),
                                 onValueChange = {
                                     settings.reminderDelayMinutes = it.toInt()
                                     viewModel.onSettingsChanged()
@@ -348,8 +374,8 @@ fun SettingsScreen(
                 item {
                     SettingsToggleRow(
                         title = "Silent Alerts",
-                        subtitle = if (settings.isCustomSoundEnabled) "Prayer alerts silent (no sound/vibration)" else "Default notification sound & vibration",
-                        checked = settings.isCustomSoundEnabled,
+                        subtitle = if (silentAlerts) "Prayer alerts silent (no sound/vibration)" else "Default notification sound & vibration",
+                        checked = silentAlerts,
                         onCheckedChange = {
                             settings.isCustomSoundEnabled = it
                             refreshKey++
@@ -366,8 +392,8 @@ fun SettingsScreen(
             item {
                 SettingsToggleRow(
                     title = "Show Dhikr Translation",
-                    subtitle = if (settings.showTasbihTranslation) "English translation & meaning visible" else "Hidden (Arabic only)",
-                    checked = settings.showTasbihTranslation,
+                    subtitle = if (showTranslation) "English translation & meaning visible" else "Hidden (Arabic only)",
+                    checked = showTranslation,
                     onCheckedChange = {
                         settings.showTasbihTranslation = it
                         refreshKey++
@@ -379,7 +405,7 @@ fun SettingsScreen(
                 SettingsToggleRow(
                     title = "Haptic Vibration",
                     subtitle = "Vibrate subtly on each count",
-                    checked = settings.isHapticFeedbackEnabled,
+                    checked = hapticFeedback,
                     onCheckedChange = {
                         settings.isHapticFeedbackEnabled = it
                         refreshKey++
@@ -395,7 +421,7 @@ fun SettingsScreen(
             item {
                 SettingsClickableRow(
                     title = "Theme",
-                    subtitle = settings.appTheme.replaceFirstChar { it.uppercase() },
+                    subtitle = themeLabel,
                     onClick = { showThemeDialog = true }
                 )
             }
@@ -408,7 +434,7 @@ fun SettingsScreen(
             item {
                 SettingsClickableRow(
                     title = "About Prayer Times",
-                    subtitle = "Version 1.0.1 • Offline-first, Private",
+                    subtitle = "Version 1.0.2 • Offline-first, Private",
                     onClick = onNavigateToAbout
                 )
             }
@@ -631,7 +657,7 @@ fun SettingsScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             RadioButton(
-                                selected = settings.appTheme == key,
+                                selected = appThemeValue == key,
                                 onClick = {
                                     settings.appTheme = key
                                     showThemeDialog = false

@@ -41,6 +41,8 @@ import com.praytracker.ui.screens.RamadanScreen
 import com.praytracker.ui.screens.SettingsScreen
 import com.praytracker.ui.screens.TasbihScreen
 import com.praytracker.ui.theme.PrayerTimesTheme
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 
 class MainActivity : ComponentActivity() {
 
@@ -52,7 +54,12 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val settingsChanged by viewModel.settings.settingsChanged.collectAsState()
-            val themeMode = viewModel.settings.appTheme
+            // Theme is computed inside a flow at emission time (fresh getter), so the
+            // value composing state here always matches the last settings write.
+            val themeMode by viewModel.settings.settingsChanged
+                .map { viewModel.settings.appTheme }
+                .distinctUntilChanged()
+                .collectAsState(initial = viewModel.settings.appTheme)
             val isDarkTheme = when (themeMode) {
                 "light" -> false
                 "dark" -> true
@@ -61,9 +68,7 @@ class MainActivity : ComponentActivity() {
 
             PrayerTimesTheme(darkTheme = isDarkTheme) {
                 // Reading and passing down settingsChanged subscribes this root scope to
-                // every settings write. Any write recomposes the tree below (the viewModel
-                // parameter is unstable), so theme, numerals and toggle/radio states are
-                // re-sampled from preferences immediately instead of after an app restart.
+                // every settings write so preference getters are re-sampled on change.
                 MainApp(viewModel = viewModel, settingsChanged = settingsChanged)
             }
         }
