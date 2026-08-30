@@ -58,7 +58,11 @@ class SettingsRepository(private val context: Context) {
         prefs[Keys.TASBIH_HAPTICS] = tasbihHapticsEnabled
         prefs[Keys.TASBIH_AUTO_SWITCH] = tasbihAutoSwitchToNext
         prefs[Keys.APP_LOCK_ENABLED] = appLockEnabled
-        prefs[Keys.APP_LOCK_PASSCODE_HASH] = appLockPasscodeHash
+        if (appLockPasscodeHash != null) {
+            prefs[Keys.APP_LOCK_PASSCODE_HASH] = appLockPasscodeHash
+        } else {
+            prefs.remove(Keys.APP_LOCK_PASSCODE_HASH)
+        }
         prefs[Keys.LAST_LOCATION_MS] = lastLocationTimeMs
     }
 

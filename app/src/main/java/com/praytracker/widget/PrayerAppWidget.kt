@@ -21,9 +21,8 @@ import androidx.glance.layout.size
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
-import androidx.glance.unit.ColorProvider
-import androidx.glance.unit.dp
-import androidx.glance.unit.sp
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.praytracker.PrayerTrackerApp
 import com.praytracker.prayer.Prayer
 import com.praytracker.ui.MainActivity
@@ -65,7 +64,7 @@ class PrayerAppWidget : GlanceAppWidget() {
                 Column(
                     modifier = GlanceModifier
                         .fillMaxSize()
-                        .background(ColorProvider(GlanceTheme.colors.primaryContainer))
+                        .background(GlanceTheme.colors.primaryContainer)
                         .cornerRadius(20.dp)
                         .clickable(actionStartActivity<MainActivity>()),
                     verticalAlignment = Alignment.CenterVertically,
