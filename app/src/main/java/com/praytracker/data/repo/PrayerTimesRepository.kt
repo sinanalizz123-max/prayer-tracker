@@ -27,8 +27,7 @@ class PrayerTimesRepository(private val settingsRepository: SettingsRepository) 
         val method = enumValueOfOrNull<CalcMethod>(settings.calcMethod) ?: CalcMethod.MWL
         val madhab = enumValueOfOrNull<Madhab>(settings.madhab) ?: Madhab.SHAFI
         val highLat = enumValueOfOrNull<HighLatRule>(settings.highLatRule) ?: HighLatRule.NIGHT_MIDDLE
-        val tzOffsetHours = ZoneId.systemDefault().rules.getOffset(date.atStartOfDay(ZoneId.systemDefault()))
-            .totalSeconds / 3600.0
+        val tzOffsetHours = date.atStartOfDay(ZoneId.systemDefault()).offset.totalSeconds / 3600.0
         return PrayerTimesCalculator.compute(
             location = GeoLocation(settings.latitude, settings.longitude),
             date = date,

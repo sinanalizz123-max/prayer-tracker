@@ -25,7 +25,7 @@ class TasbihRepository(private val dao: TasbihDao) {
         val entity = dao.get(id) ?: return null
         val newCount = (entity.count + 1).let { if (it > entity.target) entity.target else it }
         dao.upsert(entity.copy(count = newCount))
-        return newCount
+        return newCount.toLong()
     }
 
     suspend fun reset(id: Long) {

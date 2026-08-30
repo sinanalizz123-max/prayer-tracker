@@ -1,7 +1,6 @@
 package com.praytracker.ui.lock
 
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
+import android.os.Build
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.compose.foundation.background
@@ -41,6 +40,7 @@ import com.praytracker.R
 import com.praytracker.data.settings.Settings
 import com.praytracker.util.Hash
 import com.praytracker.ui.lock.PasscodePad
+import java.util.concurrent.Executors
 
 @Composable
 fun LockScreen(
@@ -50,13 +50,19 @@ fun LockScreen(
     val context = LocalContext.current
     val activity = context as FragmentActivity
 
-    var error by remember { mutableStateOf<Boolean>(false) }
+    var error by remember { mutableStateOf(false) }
     var attempt by remember { mutableStateOf("") }
 
-    val bioPrompt = rememberBiometricPrompt(
-        activity = activity,
-        onSuccess = { onUnlocked() },
-    )
+    val textAppName = stringResource(R.string.app_name)
+    val textEnter = stringResource(R.string.lock_enter_passcode)
+    val textWrong = stringResource(R.string.lock_wrong_passcode)
+    val textBiometric = stringResource(R.string.lock_use_biometric)
+    val textCancel = stringResource(R.string.lock_cancel)
+
+    val biometricPrompt = remember { createBiometricPrompt(activity, onUnlocked, textCancel) }
+    val promptInfo = remember(textBiometric, textCancel) {
+        createPromptInfo(textBiometric, textCancel)
+    }
 
     val biometricAvailable = remember {
         val manager = BiometricManager.from(context)
@@ -72,13 +78,13 @@ fun LockScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
-            stringResource(R.string.app_name),
+            textAppName,
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
         )
         Spacer(Modifier.size(8.dp))
         Text(
-            if (attempt.isEmpty() && error) stringResource(R.string.lock_wrong_passcode) else stringResource(R.string.lock_enter_passcode),
+            if (error) textWrong else textEnter,
             style = MaterialTheme.typography.bodyMedium,
             color = if (error) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -91,7 +97,7 @@ fun LockScreen(
                     .size(88.dp)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .clickable { bioPrompt.launch() },
+                    .clickable { biometricPrompt.authenticate(promptInfo) },
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -102,7 +108,7 @@ fun LockScreen(
                 )
             }
             Spacer(Modifier.size(12.dp))
-            TextButton(onClick = { bioPrompt.launch() }) {
+            TextButton(onClick = { biometricPrompt.authenticate(promptInfo) }) {
                 Text(stringResource(R.string.lock_use_biometric))
             }
             Spacer(Modifier.size(8.dp))
@@ -167,14 +173,36 @@ private fun PasscodePad(
     }
 }
 
-@Composable
-private fun rememberBiometricPrompt(
+private fun createBiometricPrompt(
     activity: FragmentActivity,
     onSuccess: () -> Unit,
-): androidx.activity.compose.ManagedActivityResultLauncher<BiometricPrompt.PromptInfo, BiometricPrompt.AuthenticationResult> {
-    return rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.BiometricPrompt(),
-    ) { result ->
-        onSuccess()
-    }
+    cancelText: String,
+): BiometricPrompt {
+    val executor = Executors.newSingleThreadExecutor()
+    return BiometricPrompt(
+        activity,
+        executor,
+        object : BiometricPrompt.AuthenticationCallback() {
+            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                onSuccess()
+            }
+        },
+    )
 }
+
+private fun createPromptInfo(title: String, cancelText: String): BiometricPrompt.PromptInfo =
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        BiometricPrompt.PromptInfo.Builder()
+            .setTitle(title)
+            .setAllowedAuthenticators(
+                BiometricManager.Authenticators.BIOMETRIC_STRONG or
+                    BiometricManager.Authenticators.BIOMETRIC_WEAK,
+            )
+            .setConfirmationRequired(false)
+            .build()
+    } else {
+        BiometricPrompt.PromptInfo.Builder()
+            .setTitle(title)
+            .setNegativeButtonText(cancelText)
+            .build()
+    }

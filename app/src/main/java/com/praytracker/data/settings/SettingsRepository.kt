@@ -2,11 +2,13 @@ package com.praytracker.data.settings
 
 import android.content.Context
 import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
@@ -26,7 +28,7 @@ class SettingsRepository(private val context: Context) {
         context.dataStore.edit { prefs -> updated.writeTo(prefs) }
     }
 
-    private fun Settings.writeTo(prefs: Preferences.MutablePreferences) {
+    private fun Settings.writeTo(prefs: MutablePreferences) {
         prefs[Keys.ONBOARDING_DONE] = onboardingDone
         prefs[Keys.THEME] = theme.storage
         prefs[Keys.LOCATION_MODE] = locationMode.storage

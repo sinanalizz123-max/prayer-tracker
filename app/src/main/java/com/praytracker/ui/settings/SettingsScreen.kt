@@ -229,9 +229,9 @@ fun SettingsScreen(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     listOf(
-                        Triple(Theme.SYSTEM, stringResource(R.string.settings_theme_system)),
-                        Triple(Theme.LIGHT, stringResource(R.string.settings_theme_light)),
-                        Triple(Theme.DARK, stringResource(R.string.settings_theme_dark)),
+                        Pair(Theme.SYSTEM, stringResource(R.string.settings_theme_system)),
+                        Pair(Theme.LIGHT, stringResource(R.string.settings_theme_light)),
+                        Pair(Theme.DARK, stringResource(R.string.settings_theme_dark)),
                     ).forEach { (theme, label) ->
                         FilterChip(
                             selected = settings.theme == theme,
@@ -317,6 +317,7 @@ fun SettingsScreen(
         var pin by remember { mutableStateOf("") }
         var confirm by remember { mutableStateOf("") }
         var error by remember { mutableStateOf("") }
+        val textMismatch = stringResource(R.string.lock_mismatch)
         AlertDialog(
             onDismissRequest = { showPasscodeDialog = false },
             title = { Text(stringResource(R.string.lock_set_passcode)) },
@@ -346,7 +347,7 @@ fun SettingsScreen(
                         if (pin.length != 4 || confirm.length != 4) {
                             error = "Enter a 4-digit passcode."
                         } else if (pin != confirm) {
-                            error = stringResource(R.string.lock_mismatch)
+                            error = textMismatch
                         } else {
                             viewModel.setPasscode(pin)
                             showPasscodeDialog = false

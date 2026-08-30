@@ -208,7 +208,6 @@ private fun DayCellHeader(label: String) {
     }
 }
 
-@Composable
 private object DayCell {
     @Composable
     fun Empty() {

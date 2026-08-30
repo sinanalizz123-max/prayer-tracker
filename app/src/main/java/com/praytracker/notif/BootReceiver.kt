@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import com.praytracker.PrayerTrackerApp
+import kotlinx.coroutines.launch
 
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -36,5 +37,5 @@ class TimeChangeReceiver : BroadcastReceiver() {
 }
 
 private fun kotlinx.coroutines.CoroutineScope.launchSafely(block: suspend kotlinx.coroutines.CoroutineScope.() -> Unit) {
-    kotlinx.coroutines.launch(block = block)
+    launch(block = block)
 }

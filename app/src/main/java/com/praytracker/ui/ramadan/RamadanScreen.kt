@@ -32,6 +32,8 @@ import java.time.format.DateTimeFormatter
 fun RamadanScreen(
     onBack: () -> Unit,
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val app = context.applicationContext as PrayerTrackerApp
     ScreenScaffold(title = stringResource(R.string.more_ramadan), onBack = onBack) { padding ->
         Column(
             modifier = Modifier
@@ -41,9 +43,7 @@ fun RamadanScreen(
         ) {
             var offset by remember { mutableStateOf(0) }
             LaunchedEffect(Unit) {
-                val application = (androidx.compose.ui.platform.LocalContext.current.applicationContext
-                    as PrayerTrackerApp)
-                offset = application.container.settingsRepository.snapshot().hijriOffsetDays
+                offset = app.container.settingsRepository.snapshot().hijriOffsetDays
             }
 
             val today = LocalDate.now().plusDays(offset.toLong())

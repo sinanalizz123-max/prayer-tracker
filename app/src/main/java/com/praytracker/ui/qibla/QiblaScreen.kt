@@ -94,7 +94,7 @@ fun QiblaScreen(
         ) {
             Spacer(Modifier.size(16.dp))
 
-            CompassCircle(relativeDegrees = relative, qiblaBearing = qiblaBearing)
+            CompassCircle(relativeDegrees = relative.toFloat(), qiblaBearing = qiblaBearing)
 
             Spacer(Modifier.size(24.dp))
 
@@ -124,6 +124,8 @@ fun QiblaScreen(
 
 @Composable
 private fun CompassCircle(relativeDegrees: Float, qiblaBearing: Double) {
+    val surfaceVariant = MaterialTheme.colorScheme.surfaceVariant
+    val primary = MaterialTheme.colorScheme.primary
     Box(contentAlignment = Alignment.Center) {
         Canvas(Modifier.size(200.dp)) {
             val cx = size.width / 2f
@@ -132,12 +134,12 @@ private fun CompassCircle(relativeDegrees: Float, qiblaBearing: Double) {
             val stroke = 4.dp.toPx()
 
             drawCircle(
-                color = MaterialTheme.colorScheme.surfaceVariant,
+                color = surfaceVariant,
                 radius = r,
                 center = Offset(cx, cy),
             )
             drawCircle(
-                color = MaterialTheme.colorScheme.primary,
+                color = primary,
                 radius = r - 2.dp.toPx(),
                 center = Offset(cx, cy),
                 style = Stroke(width = stroke),
@@ -165,24 +167,24 @@ private fun CompassCircle(relativeDegrees: Float, qiblaBearing: Double) {
             val sinA = sin(angleRad).toFloat()
             val cosA = cos(angleRad).toFloat()
             drawLine(
-                color = MaterialTheme.colorScheme.primary,
+                color = primary,
                 start = Offset(cx, cy),
                 end = Offset(cx + needleLength * sinA, cy - needleLength * cosA),
                 strokeWidth = 8.dp.toPx(),
             )
             drawLine(
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
+                color = primary.copy(alpha = 0.35f),
                 start = Offset(cx, cy),
                 end = Offset(cx - needleLength * sinA, cy + needleLength * cosA),
                 strokeWidth = 4.dp.toPx(),
             )
         }
-    }
 
-    Text(
-        text = "Qibla",
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.align(Alignment.TopCenter).padding(top = 40.dp),
-    )
+        Text(
+            text = "Qibla",
+            style = MaterialTheme.typography.titleSmall,
+            color = primary,
+            modifier = Modifier.align(Alignment.TopCenter).padding(top = 40.dp),
+        )
+    }
 }

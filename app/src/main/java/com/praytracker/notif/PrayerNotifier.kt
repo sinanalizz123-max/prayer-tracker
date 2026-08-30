@@ -28,7 +28,7 @@ class PrayerNotifier(private val context: Context) {
         val manager = NotificationManagerCompat.from(context)
         if (!manager.areNotificationsEnabled()) return
 
-        val channel = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) NotificationChannels.PRAYER_CHANNEL_ID else null
+        val channel = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) NotificationChannels.PRAYER_CHANNEL_ID else ""
         val builder = NotificationCompat.Builder(context, channel)
             .setSmallIcon(R.drawable.ic_stat_prayer)
             .setContentTitle(arabicNames[prayer] ?: prayer.displayName)
@@ -49,7 +49,7 @@ class PrayerNotifier(private val context: Context) {
         val manager = NotificationManagerCompat.from(context)
         if (!manager.areNotificationsEnabled()) return
 
-        val channel = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) NotificationChannels.REMINDER_CHANNEL_ID else null
+        val channel = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) NotificationChannels.REMINDER_CHANNEL_ID else ""
         val builder = NotificationCompat.Builder(context, channel)
             .setSmallIcon(R.drawable.ic_stat_prayer)
             .setContentTitle(context.getString(R.string.notif_reminder_title, prayer.displayName))

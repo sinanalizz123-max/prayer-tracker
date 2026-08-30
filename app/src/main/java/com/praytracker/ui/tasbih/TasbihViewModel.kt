@@ -24,6 +24,8 @@ class TasbihViewModel(container: AppContainer) : ViewModel() {
     private val tasbihRepository = container.tasbihRepository
     private val settingsRepository = container.settingsRepository
 
+    private val selectedId = MutableStateFlow(-1L)
+
     val state: StateFlow<TasbihUiState> =
         combine(
             tasbihRepository.observeAll(),
@@ -33,8 +35,6 @@ class TasbihViewModel(container: AppContainer) : ViewModel() {
             val effectiveSelected = if (items.any { it.id == selected }) selected else items.firstOrNull()?.id ?: -1
             TasbihUiState(items = items, selectedId = effectiveSelected, settings = settings)
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TasbihUiState())
-
-    private val selectedId = MutableStateFlow(-1L)
 
     fun select(id: Long) {
         selectedId.value = id
@@ -62,6 +62,7 @@ class TasbihViewModel(container: AppContainer) : ViewModel() {
         viewModelScope.launch {
             val id = tasbihRepository.upsert(
                 TasbihEntity(
+                    id = -1L,
                     arabic = arabic.trim(),
                     translation = translation?.trim()?.ifBlank { null },
                     target = target.coerceIn(1, 100_000),

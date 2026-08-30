@@ -8,6 +8,7 @@ import com.praytracker.data.settings.Settings
 import com.praytracker.prayer.Prayer
 import java.time.LocalDate
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
 
 class PrayerAlarmReceiver : BroadcastReceiver() {
 
@@ -54,5 +55,5 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
 }
 
 private fun kotlinx.coroutines.CoroutineScope.launchSafely(block: suspend kotlinx.coroutines.CoroutineScope.() -> Unit) {
-    kotlinx.coroutines.launch(block = block)
+    launch(block = block)
 }

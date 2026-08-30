@@ -168,6 +168,8 @@ private fun BigCounter(
     onReset: () -> Unit,
 ) {
     val progress = if (entity.target <= 0) 0f else min(entity.count, entity.target).toFloat() / entity.target
+    val surface = MaterialTheme.colorScheme.surface
+    val primary = MaterialTheme.colorScheme.primary
 
     Card(
         modifier = Modifier
@@ -186,7 +188,7 @@ private fun BigCounter(
                 Canvas(Modifier.size(220.dp)) {
                     val stroke = 12.dp.toPx()
                     drawArc(
-                        color = MaterialTheme.colorScheme.surface,
+                        color = surface,
                         startAngle = -90f,
                         sweepAngle = 360f,
                         useCenter = false,
@@ -195,7 +197,7 @@ private fun BigCounter(
                         style = androidx.compose.ui.graphics.drawscope.Stroke(width = stroke, cap = StrokeCap.Round),
                     )
                     drawArc(
-                        color = MaterialTheme.colorScheme.primary,
+                        color = primary,
                         startAngle = -90f,
                         sweepAngle = 360f * progress,
                         useCenter = false,

@@ -332,6 +332,7 @@ private fun SunriseRow(time: String) {
     }
 }
 
+@Composable
 private fun statusColor(status: PrayerStatus): Color = when (status) {
     PrayerStatus.PRAYED -> Color(0xFF2E7D56)
     PrayerStatus.DELAYED -> Color(0xFFD9A441)

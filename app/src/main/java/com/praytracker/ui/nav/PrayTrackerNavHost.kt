@@ -1,5 +1,6 @@
 package com.praytracker.ui.nav
 
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
@@ -118,7 +119,7 @@ fun ScreenScaffold(
     showMoreSettings: Boolean = false,
     onSettings: () -> Unit = {},
     snackbarHost: @Composable () -> Unit = {},
-    content: @Composable (Modifier) -> Unit,
+    content: @Composable (PaddingValues) -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -140,6 +141,6 @@ fun ScreenScaffold(
         },
         snackbarHost = { snackbarHost() },
     ) { padding ->
-        content(Modifier.padding(padding))
+        content(padding)
     }
 }
