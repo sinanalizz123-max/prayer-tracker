@@ -27,6 +27,8 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -75,41 +77,104 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    val prayerSchedule: StateFlow<PrayerCalculator.PrayerSchedule> = combine(
-        settings.settingsChanged,
-        _currentTime
-    ) { _, time ->
-        PrayerCalculator.calculateSchedule(
-            lat = settings.latitude,
-            lon = settings.longitude,
-            timezoneId = settings.timezoneId,
-            localDate = time.toLocalDate(),
-            settings = settings
-        )
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = PrayerCalculator.calculateSchedule(
-            lat = settings.latitude,
-            lon = settings.longitude,
-            timezoneId = settings.timezoneId,
-            localDate = LocalDate.now(),
-            settings = settings
-        )
+    /**
+     * Everything that affects a computed PrayerSchedule. Astronomical recalculation
+     * is expensive, so it only runs when this key actually changes (date rollover,
+     * location, timezone, or a calculation setting) instead of every second.
+     */
+    private data class ScheduleKey(
+        val date: LocalDate,
+        val latitude: Double,
+        val longitude: Double,
+        val timezoneId: String,
+        val calculationMethod: Int,
+        val madhab: Int,
+        val highLatitudeRule: Int,
+        val adjustmentFajr: Int,
+        val adjustmentDhuhr: Int,
+        val adjustmentAsr: Int,
+        val adjustmentMaghrib: Int,
+        val adjustmentIsha: Int,
+        val hijriAdjustment: Int,
+        val locationName: String
     )
 
-    val nextPrayerInfo: StateFlow<PrayerCalculator.NextPrayerInfo?> = combine(
+    private fun currentScheduleKey(date: LocalDate): ScheduleKey = ScheduleKey(
+        date = date,
+        latitude = settings.latitude,
+        longitude = settings.longitude,
+        timezoneId = settings.timezoneId,
+        calculationMethod = settings.calculationMethod,
+        madhab = settings.madhab,
+        highLatitudeRule = settings.highLatitudeRule,
+        adjustmentFajr = settings.adjustmentFajr,
+        adjustmentDhuhr = settings.adjustmentDhuhr,
+        adjustmentAsr = settings.adjustmentAsr,
+        adjustmentMaghrib = settings.adjustmentMaghrib,
+        adjustmentIsha = settings.adjustmentIsha,
+        hijriAdjustment = settings.hijriAdjustment,
+        locationName = settings.locationName
+    )
+
+    // Only the date changes from the per-second clock; emitted at most once per day.
+    private val currentDate: StateFlow<LocalDate> = _currentTime
+        .map { it.toLocalDate() }
+        .distinctUntilChanged()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = LocalDate.now()
+        )
+
+    private val scheduleKey: StateFlow<ScheduleKey> = combine(
         settings.settingsChanged,
+        currentDate
+    ) { _, date ->
+        currentScheduleKey(date)
+    }.distinctUntilChanged().stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = currentScheduleKey(LocalDate.now())
+    )
+
+    private fun scheduleFor(key: ScheduleKey, dayOffset: Long): PrayerCalculator.PrayerSchedule {
+        val date = key.date.plusDays(dayOffset)
+        return PrayerCalculator.calculateSchedule(
+            lat = key.latitude,
+            lon = key.longitude,
+            timezoneId = key.timezoneId,
+            localDate = date,
+            settings = settings
+        )
+    }
+
+    val prayerSchedule: StateFlow<PrayerCalculator.PrayerSchedule> = scheduleKey
+        .map { scheduleFor(it, 0) }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = scheduleFor(currentScheduleKey(LocalDate.now()), 0)
+        )
+
+    private val tomorrowSchedule: StateFlow<PrayerCalculator.PrayerSchedule> = scheduleKey
+        .map { scheduleFor(it, 1) }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = scheduleFor(currentScheduleKey(LocalDate.now()), 1)
+        )
+
+    /**
+     * Recomputed every second, but against the cached schedules: only the
+     * countdown arithmetic runs here, never the astronomical calculations.
+     */
+    val nextPrayerInfo: StateFlow<PrayerCalculator.NextPrayerInfo?> = combine(
+        prayerSchedule,
+        tomorrowSchedule,
         _currentTime
-    ) { _, time ->
+    ) { today, tomorrow, now ->
         try {
-            PrayerCalculator.getNextPrayer(
-                lat = settings.latitude,
-                lon = settings.longitude,
-                timezoneId = settings.timezoneId,
-                now = time,
-                settings = settings
-            )
+            PrayerCalculator.getNextPrayer(today, tomorrow, now)
         } catch (e: Exception) {
             null
         }
@@ -121,9 +186,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     val hijriDate: StateFlow<HijriHelper.HijriDateInfo> = combine(
         settings.settingsChanged,
-        _currentTime
-    ) { _, time ->
-        HijriHelper.getHijriDate(time.toLocalDate(), settings.hijriAdjustment, settings.useArabicNumerals)
+        currentDate
+    ) { _, date ->
+        HijriHelper.getHijriDate(date, settings.hijriAdjustment, settings.useArabicNumerals)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -233,12 +298,24 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     // The raw compass heading is measured relative to *magnetic* north, but the
     // Qibla bearing is relative to *true* (geographic) north. Correct for the
     // local magnetic declination so the needle points at the real Qibla.
+    // Declination drifts much slower than the per-second clock, so it is only
+    // recomputed when the date or a setting changes.
+    private val magneticDeclination: StateFlow<Float> = combine(
+        settings.settingsChanged,
+        currentDate
+    ) { _, date ->
+        magneticDeclinationFor(date.atStartOfDay(_currentTime.value.zone))
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = magneticDeclinationFor(ZonedDateTime.now())
+    )
+
     val trueHeading: StateFlow<Float> = combine(
         compassManager.heading,
-        settings.settingsChanged,
-        _currentTime
-    ) { heading, _, now ->
-        val trueBearing = heading + magneticDeclination(now)
+        magneticDeclination
+    ) { heading, declination ->
+        val trueBearing = heading + declination
         ((trueBearing % 360f) + 360f) % 360f
     }.stateIn(
         scope = viewModelScope,
@@ -246,7 +323,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         initialValue = 0f
     )
 
-    private fun magneticDeclination(now: ZonedDateTime): Float {
+    private fun magneticDeclinationFor(now: ZonedDateTime): Float {
         return try {
             val field = GeomagneticField(
                 settings.latitude.toFloat(),
@@ -277,16 +354,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         get() = !(settings.latitude == 0.0 && settings.longitude == 0.0) &&
                 settings.locationName != "Detecting..."
 
-    val qiblaDirection: StateFlow<Float> = combine(
-        settings.settingsChanged,
-        _currentTime
-    ) { _, _ ->
-        computeQiblaDirection()
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = computeQiblaDirection()
-    )
+    val qiblaDirection: StateFlow<Float> = settings.settingsChanged
+        .map { computeQiblaDirection() }
+        .distinctUntilChanged()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = computeQiblaDirection()
+        )
 
     // --- TASBIH LIBRARY & COUNTING ---
     val tasbihList: StateFlow<List<TasbihItem>> = repository.allTasbihItems
