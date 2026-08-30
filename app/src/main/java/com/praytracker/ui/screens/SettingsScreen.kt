@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.sp
 import com.praytracker.ui.MainViewModel
 import com.praytracker.ui.components.HijriCalendarBottomSheet
 import com.praytracker.ui.components.LocationPickerBottomSheet
+import com.praytracker.ui.components.rememberLocationPermissionDetector
 import com.praytracker.util.PrayerCalculator
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -76,6 +77,11 @@ fun SettingsScreen(
     var showThemeDialog by remember { mutableStateOf(false) }
 
     var refreshKey by remember { mutableIntStateOf(0) }
+
+    val detectLocation = rememberLocationPermissionDetector(
+        onGranted = { viewModel.detectLocation() },
+        onDenied = { settings.isAutomaticLocation = false }
+    )
 
     Scaffold(
         topBar = {
@@ -117,7 +123,7 @@ fun SettingsScreen(
                     onCheckedChange = { isAuto ->
                         settings.isAutomaticLocation = isAuto
                         if (isAuto) {
-                            viewModel.detectLocation()
+                            detectLocation()
                         } else {
                             showLocationPickerSheet = true
                         }
@@ -330,6 +336,18 @@ fun SettingsScreen(
                             )
                         }
                     }
+                }
+
+                item {
+                    SettingsToggleRow(
+                        title = "Silent Alerts",
+                        subtitle = if (settings.isCustomSoundEnabled) "Prayer alerts silent (no sound/vibration)" else "Default notification sound & vibration",
+                        checked = settings.isCustomSoundEnabled,
+                        onCheckedChange = {
+                            settings.isCustomSoundEnabled = it
+                            refreshKey++
+                        }
+                    )
                 }
             }
 

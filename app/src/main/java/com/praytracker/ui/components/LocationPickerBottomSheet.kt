@@ -68,6 +68,13 @@ fun LocationPickerBottomSheet(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
+    val detectLocation = rememberLocationPermissionDetector(
+        onGranted = {
+            viewModel.detectLocation()
+            scope.launch { sheetState.hide() }.invokeOnCompletion { onDismiss() }
+        }
+    )
+
     var searchQuery by remember { mutableStateOf("") }
     var suggestions by remember { mutableStateOf<List<PlaceSuggestion>>(LocationSearchHelper.POPULAR_WORLD_CITIES.take(12)) }
     var isSearching by remember { mutableStateOf(false) }
@@ -163,10 +170,7 @@ fun LocationPickerBottomSheet(
                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable {
-                        viewModel.detectLocation()
-                        scope.launch { sheetState.hide() }.invokeOnCompletion { onDismiss() }
-                    }
+                    .clickable { detectLocation() }
                     .testTag("use_gps_location_button")
             ) {
                 Row(

@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.sp
 import com.praytracker.ui.MainViewModel
 import com.praytracker.ui.components.HijriCalendarBottomSheet
 import com.praytracker.ui.components.LocationPickerBottomSheet
+import com.praytracker.ui.components.rememberLocationPermissionDetector
 import com.praytracker.ui.theme.ActivePrayerPurple
 import com.praytracker.ui.theme.EmeraldGreen
 import com.praytracker.ui.theme.EmeraldGreenContainer
@@ -78,6 +79,10 @@ fun PrayerTimesScreen(
 
     var showLocationPickerSheet by remember { mutableStateOf(false) }
     var showHijriCalendarSheet by remember { mutableStateOf(false) }
+
+    val detectLocation = rememberLocationPermissionDetector(
+        onGranted = { viewModel.detectLocation() }
+    )
 
     LazyColumn(
         modifier = modifier
@@ -151,7 +156,7 @@ fun PrayerTimesScreen(
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(
-                        onClick = { viewModel.detectLocation() },
+                        onClick = { detectLocation() },
                         modifier = Modifier.testTag("refresh_location_button")
                     ) {
                         if (isDetecting) {

@@ -16,18 +16,19 @@ class AlarmReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         val prayerName = intent.getStringExtra("PRAYER_NAME") ?: "Prayer"
-        Log.d("AlarmReceiver", "Received prayer alarm for: $prayerName")
+        val isFollowUp = intent.getBooleanExtra("IS_FOLLOW_UP", false)
+        Log.d("AlarmReceiver", "Received prayer alarm for: $prayerName (followUp=$isFollowUp)")
 
         val settings = SettingsManager(context)
-        
+
         // Show notification
-        showNotification(context, prayerName, settings)
+        showNotification(context, prayerName, settings, isFollowUp)
 
         // Self-healing: reschedule alarms for the next 24 hours
         AlarmScheduler.rescheduleAlarms(context, settings)
     }
 
-    private fun showNotification(context: Context, prayerName: String, settings: SettingsManager) {
+    private fun showNotification(context: Context, prayerName: String, settings: SettingsManager, isFollowUp: Boolean) {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val channelId = "prayer_times_channel"
 
@@ -53,8 +54,15 @@ class AlarmReceiver : BroadcastReceiver() {
         val pendingIntent = PendingIntent.getActivity(context, 0, openAppIntent, flags)
 
         // Custom notification title and body
-        val title = "Time for $prayerName"
-        val text = "The time for $prayerName has started. Tap to view the prayer schedule."
+        val title: String
+        val text: String
+        if (isFollowUp) {
+            title = "Reminder: Time for $prayerName"
+            text = "You may have missed the $prayerName alert. Don't forget to pray — tap to view the schedule."
+        } else {
+            title = "Time for $prayerName"
+            text = "The time for $prayerName has started. Tap to view the prayer schedule."
+        }
 
         val builder = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(android.R.drawable.ic_lock_idle_alarm) // simple system alarm icon
@@ -64,20 +72,24 @@ class AlarmReceiver : BroadcastReceiver() {
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
 
-        // Use custom sound settings if enabled (otherwise defaults to system notification sound)
-        if (!settings.isCustomSoundEnabled) {
+        // Use custom sound settings if enabled: silent alerts (silent=true) or the
+        // default system notification sound & vibration
+        if (settings.isCustomSoundEnabled) {
+            builder.setSilent(true)
+        } else {
             builder.setDefaults(NotificationCompat.DEFAULT_SOUND or NotificationCompat.DEFAULT_VIBRATE)
         }
 
-        // Notification IDs: 1 for Fajr, 2 for Dhuhr, etc.
-        val notificationId = when (prayerName.uppercase()) {
+        // Notification IDs: 1 for Fajr, 2 for Dhuhr, etc. Follow-ups use +10 so
+        // the on-time and follow-up alerts can be shown/managed independently.
+        val notificationId = (when (prayerName.uppercase()) {
             "FAJR" -> 1
             "DHUHR" -> 2
             "ASR" -> 3
             "MAGHRIB" -> 4
             "ISHA" -> 5
             else -> 100
-        }
+        }) + if (isFollowUp) 10 else 0
 
         try {
             notificationManager.notify(notificationId, builder.build())

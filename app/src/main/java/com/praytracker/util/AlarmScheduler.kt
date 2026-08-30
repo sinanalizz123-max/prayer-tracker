@@ -61,7 +61,20 @@ object AlarmScheduler {
             val (name, time, isEnabled) = item
             if (isEnabled && time.isAfter(now)) {
                 val requestCode = offsetCode + index
-                scheduleAlarm(context, alarmManager, time.toInstant().toEpochMilli(), name, requestCode)
+                scheduleAlarm(context, alarmManager, time.toInstant().toEpochMilli(), name, requestCode, isFollowUp = false)
+
+                // Follow-up reminder a few minutes after the prayer time begins
+                val delayMinutes = settings.reminderDelayMinutes
+                if (delayMinutes > 0) {
+                    scheduleAlarm(
+                        context,
+                        alarmManager,
+                        time.plusMinutes(delayMinutes.toLong()).toInstant().toEpochMilli(),
+                        name,
+                        requestCode = (offsetCode + 20) + index,
+                        isFollowUp = true
+                    )
+                }
             }
         }
     }
@@ -71,11 +84,13 @@ object AlarmScheduler {
         alarmManager: AlarmManager,
         triggerTimeMs: Long,
         prayerName: String,
-        requestCode: Int
+        requestCode: Int,
+        isFollowUp: Boolean
     ) {
         val intent = Intent(context, AlarmReceiver::class.java).apply {
             action = "com.praytracker.action.PRAYER_ALARM"
             putExtra("PRAYER_NAME", prayerName)
+            putExtra("IS_FOLLOW_UP", isFollowUp)
         }
 
         val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -141,8 +156,9 @@ object AlarmScheduler {
             PendingIntent.FLAG_NO_CREATE
         }
 
-        // Cancel codes for today (0-4) and tomorrow (10-14)
-        for (code in listOf(0, 1, 2, 3, 4, 10, 11, 12, 13, 14)) {
+        // Cancel codes for today (0-4), tomorrow (10-14),
+        // and follow-up reminders today (20-24) and tomorrow (30-34)
+        for (code in listOf(0, 1, 2, 3, 4, 10, 11, 12, 13, 14, 20, 21, 22, 23, 24, 30, 31, 32, 33, 34)) {
             val pendingIntent = PendingIntent.getBroadcast(
                 context,
                 code,

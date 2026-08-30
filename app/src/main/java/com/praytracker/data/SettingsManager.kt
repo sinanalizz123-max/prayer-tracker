@@ -4,17 +4,21 @@ import android.content.Context
 import android.content.SharedPreferences
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import java.util.concurrent.atomic.AtomicLong
 
 class SettingsManager(private val context: Context) : PrayerSettings {
 
     private val prefs: SharedPreferences = context.getSharedPreferences("prayer_times_prefs", Context.MODE_PRIVATE)
 
-    // Using a Simple Flow for reactively listening to setting changes if needed
-    private val _settingsChanged = MutableStateFlow(System.currentTimeMillis())
+    // Monotonic change counter. Every setting write bumps it with a strictly
+    // increasing value, so StateFlow never collapses concurrent updates made in
+    // the same millisecond into a deduplicated (dropped) emission.
+    private val changeCounter = AtomicLong(0L)
+    private val _settingsChanged = MutableStateFlow(0L)
     val settingsChanged: StateFlow<Long> = _settingsChanged
 
     private fun notifyChanged() {
-        _settingsChanged.value = System.currentTimeMillis()
+        _settingsChanged.value = changeCounter.incrementAndGet()
     }
 
     // --- PRAYER TIMES SETTINGS ---

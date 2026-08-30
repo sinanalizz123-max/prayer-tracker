@@ -2,6 +2,7 @@ package com.praytracker.ui
 
 import android.app.Application
 import android.content.Context
+import android.hardware.GeomagneticField
 import android.location.Geocoder
 import android.location.Location
 import android.os.Build
@@ -229,15 +230,63 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val compassHeading: StateFlow<Float> = compassManager.heading
     val compassAccuracy: StateFlow<Int> = compassManager.accuracy
 
-    val qiblaDirection: Float
-        get() {
-            return try {
-                val coordinates = com.batoulapps.adhan.Coordinates(settings.latitude, settings.longitude)
-                com.batoulapps.adhan.Qibla(coordinates).direction.toFloat()
-            } catch (e: Exception) {
-                0f
-            }
+    // The raw compass heading is measured relative to *magnetic* north, but the
+    // Qibla bearing is relative to *true* (geographic) north. Correct for the
+    // local magnetic declination so the needle points at the real Qibla.
+    val trueHeading: StateFlow<Float> = combine(
+        compassManager.heading,
+        settings.settingsChanged,
+        _currentTime
+    ) { heading, _, now ->
+        val trueBearing = heading + magneticDeclination(now)
+        ((trueBearing % 360f) + 360f) % 360f
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = 0f
+    )
+
+    private fun magneticDeclination(now: ZonedDateTime): Float {
+        return try {
+            val field = GeomagneticField(
+                settings.latitude.toFloat(),
+                settings.longitude.toFloat(),
+                0f,
+                now.toInstant().toEpochMilli()
+            )
+            field.declination
+        } catch (e: Exception) {
+            0f
         }
+    }
+
+    private fun computeQiblaDirection(): Float {
+        return try {
+            val coordinates = com.batoulapps.adhan.Coordinates(settings.latitude, settings.longitude)
+            com.batoulapps.adhan.Qibla(coordinates).direction.toFloat()
+        } catch (e: Exception) {
+            0f
+        }
+    }
+
+    /**
+     * True when a real location has been set. The default coordinates (0.0, 0.0)
+     * and "Detecting..." placeholder mean the Qibla bearing would be meaningless.
+     */
+    val locationResolved: Boolean
+        get() = !(settings.latitude == 0.0 && settings.longitude == 0.0) &&
+                settings.locationName != "Detecting..."
+
+    val qiblaDirection: StateFlow<Float> = combine(
+        settings.settingsChanged,
+        _currentTime
+    ) { _, _ ->
+        computeQiblaDirection()
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = computeQiblaDirection()
+    )
 
     // --- TASBIH LIBRARY & COUNTING ---
     val tasbihList: StateFlow<List<TasbihItem>> = repository.allTasbihItems
