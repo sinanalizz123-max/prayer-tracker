@@ -38,7 +38,7 @@ jobs:
         run: ./gradlew assembleDebug testDebugUnitTest --stacktrace
 
       - name: Upload debug APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: prayer-tracker-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
@@ -46,7 +46,7 @@ jobs:
 
       - name: Upload unit test results
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: unit-test-results
           path: app/build/reports/tests/
