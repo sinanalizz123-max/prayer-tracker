@@ -100,16 +100,16 @@ class SettingsManager(private val context: Context) : PrayerSettings {
         }
 
     var latitude: Double
-        get() = prefs.getFloat("latitude", 0.0f).toDouble()
+        get() = resolveStoredCoordinate(prefs.getString("latitude_precise", null), prefs.getFloat("latitude", 0.0f))
         set(value) {
-            prefs.edit().putFloat("latitude", value.toFloat()).apply()
+            prefs.edit().putString("latitude_precise", value.toString()).apply()
             notifyChanged()
         }
 
     var longitude: Double
-        get() = prefs.getFloat("longitude", 0.0f).toDouble()
+        get() = resolveStoredCoordinate(prefs.getString("longitude_precise", null), prefs.getFloat("longitude", 0.0f))
         set(value) {
-            prefs.edit().putFloat("longitude", value.toFloat()).apply()
+            prefs.edit().putString("longitude_precise", value.toString()).apply()
             notifyChanged()
         }
 
