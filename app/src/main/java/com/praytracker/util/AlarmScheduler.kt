@@ -7,76 +7,80 @@ import android.content.Intent
 import android.os.Build
 import android.util.Log
 import com.praytracker.data.SettingsManager
-import java.time.LocalDate
 import java.time.ZonedDateTime
 
 object AlarmScheduler {
 
     private const val TAG = "AlarmScheduler"
 
+    /** Snapshot of currently armed alarms (request code -> trigger epoch millis). */
+    private const val PLAN_PREFS = "alarm_plan_prefs"
+
     fun rescheduleAlarms(context: Context, settings: SettingsManager) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
-        // First, cancel any existing alarms to prevent duplication
-        cancelAllAlarms(context)
-
         if (!settings.isMasterNotificationEnabled) {
+            // Reminders are switched off globally: drop everything and forget the arming plan.
+            cancelAllAlarms(context)
+            writeArmedPlan(context, emptyMap())
             Log.d(TAG, "Master notifications disabled. Cancelled all alarms.")
             return
         }
 
         val now = ZonedDateTime.now()
-        val today = LocalDate.now()
+        val day = now.toLocalDate()
 
-        // Schedule for today and tomorrow
-        scheduleForDate(context, alarmManager, today, now, settings, offsetCode = 0)
-        scheduleForDate(context, alarmManager, today.plusDays(1), now, settings, offsetCode = 10)
-    }
-
-    private fun scheduleForDate(
-        context: Context,
-        alarmManager: AlarmManager,
-        date: LocalDate,
-        now: ZonedDateTime,
-        settings: SettingsManager,
-        offsetCode: Int
-    ) {
-        val schedule = PrayerCalculator.calculateSchedule(
+        // Schedules are recomputed here so alarms always reflect the persisted
+        // settings, independently of any UI state or cached ViewModel schedules.
+        val todaySchedule = PrayerCalculator.calculateSchedule(
             lat = settings.latitude,
             lon = settings.longitude,
             timezoneId = settings.timezoneId,
-            localDate = date,
+            localDate = day,
+            settings = settings
+        )
+        val tomorrowSchedule = PrayerCalculator.calculateSchedule(
+            lat = settings.latitude,
+            lon = settings.longitude,
+            timezoneId = settings.timezoneId,
+            localDate = day.plusDays(1),
             settings = settings
         )
 
-        val prayersToSchedule = listOf(
-            Triple("FAJR", schedule.fajr, settings.isFajrNotificationEnabled),
-            Triple("DHUHR", schedule.dhuhr, settings.isDhuhrNotificationEnabled),
-            Triple("ASR", schedule.asr, settings.isAsrNotificationEnabled),
-            Triple("MAGHRIB", schedule.maghrib, settings.isMaghribNotificationEnabled),
-            Triple("ISHA", schedule.isha, settings.isIshaNotificationEnabled)
+        val plan = AlarmPlanBuilder.buildPlan(
+            todaySchedule = todaySchedule,
+            tomorrowSchedule = tomorrowSchedule,
+            now = now,
+            flags = AlarmPlanBuilder.NotificationFlags(
+                masterEnabled = settings.isMasterNotificationEnabled,
+                fajrEnabled = settings.isFajrNotificationEnabled,
+                dhuhrEnabled = settings.isDhuhrNotificationEnabled,
+                asrEnabled = settings.isAsrNotificationEnabled,
+                maghribEnabled = settings.isMaghribNotificationEnabled,
+                ishaEnabled = settings.isIshaNotificationEnabled,
+                reminderDelayMinutes = settings.reminderDelayMinutes
+            )
         )
 
-        for ((index, item) in prayersToSchedule.withIndex()) {
-            val (name, time, isEnabled) = item
-            if (isEnabled && time.isAfter(now)) {
-                val requestCode = offsetCode + index
-                scheduleAlarm(context, alarmManager, time.toInstant().toEpochMilli(), name, requestCode, isFollowUp = false)
+        val desired = plan.associate { it.requestCode to it.triggerEpochMillis }
+        val armed = readArmedPlan(context)
 
-                // Follow-up reminder a few minutes after the prayer time begins
-                val delayMinutes = settings.reminderDelayMinutes
-                if (delayMinutes > 0) {
-                    scheduleAlarm(
-                        context,
-                        alarmManager,
-                        time.plusMinutes(delayMinutes.toLong()).toInstant().toEpochMilli(),
-                        name,
-                        requestCode = (offsetCode + 20) + index,
-                        isFollowUp = true
-                    )
-                }
+        // Only touch what changed: cancel alarms that are no longer wanted, and
+        // (re)arm those whose trigger time moved. Armed-and-unchanged alarms stay
+        // exactly as AlarmManager registered them, so a notification firing no
+        // longer tears down and rebuilds the whole schedule.
+        for (code in armed.keys) {
+            if (code !in desired) {
+                cancelAlarmIfPresent(context, code)
             }
         }
+        for (item in plan) {
+            if (armed[item.requestCode] != item.triggerEpochMillis) {
+                scheduleAlarm(context, alarmManager, item.triggerEpochMillis, item.prayerName, item.requestCode, item.isFollowUp)
+            }
+        }
+
+        writeArmedPlan(context, desired)
     }
 
     private fun scheduleAlarm(
@@ -145,6 +149,12 @@ object AlarmScheduler {
     }
 
     private fun cancelAllAlarms(context: Context) {
+        for (code in listOf(0, 1, 2, 3, 4, 10, 11, 12, 13, 14, 20, 21, 22, 23, 24, 30, 31, 32, 33, 34)) {
+            cancelAlarmIfPresent(context, code)
+        }
+    }
+
+    private fun cancelAlarmIfPresent(context: Context, code: Int) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val intent = Intent(context, AlarmReceiver::class.java).apply {
             action = "com.praytracker.action.PRAYER_ALARM"
@@ -156,19 +166,39 @@ object AlarmScheduler {
             PendingIntent.FLAG_NO_CREATE
         }
 
-        // Cancel codes for today (0-4), tomorrow (10-14),
-        // and follow-up reminders today (20-24) and tomorrow (30-34)
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            code,
+            intent,
+            flags
+        )
+        if (pendingIntent != null) {
+            alarmManager.cancel(pendingIntent)
+            pendingIntent.cancel()
+        }
+    }
+
+    private fun readArmedPlan(context: Context): Map<Int, Long> {
+        val prefs = context.getSharedPreferences(PLAN_PREFS, Context.MODE_PRIVATE)
+        return listOf(0, 1, 2, 3, 4, 10, 11, 12, 13, 14, 20, 21, 22, 23, 24, 30, 31, 32, 33, 34)
+            .mapNotNull { code ->
+                val trigger = prefs.getLong("armed_$code", -1L)
+                if (trigger >= 0L) code to trigger else null
+            }
+            .toMap()
+    }
+
+    private fun writeArmedPlan(context: Context, plan: Map<Int, Long>) {
+        val prefs = context.getSharedPreferences(PLAN_PREFS, Context.MODE_PRIVATE)
+        val editor = prefs.edit()
         for (code in listOf(0, 1, 2, 3, 4, 10, 11, 12, 13, 14, 20, 21, 22, 23, 24, 30, 31, 32, 33, 34)) {
-            val pendingIntent = PendingIntent.getBroadcast(
-                context,
-                code,
-                intent,
-                flags
-            )
-            if (pendingIntent != null) {
-                alarmManager.cancel(pendingIntent)
-                pendingIntent.cancel()
+            val trigger = plan[code]
+            if (trigger != null) {
+                editor.putLong("armed_$code", trigger)
+            } else {
+                editor.remove("armed_$code")
             }
         }
+        editor.apply()
     }
 }

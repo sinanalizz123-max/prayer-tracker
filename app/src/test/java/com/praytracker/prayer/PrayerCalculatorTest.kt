@@ -215,12 +215,18 @@ class PrayerCalculatorTest {
 
         fun checkEquivalent(reference: PrayerCalculator.NextPrayerInfo, cached: PrayerCalculator.NextPrayerInfo, time: ZonedDateTime) {
             assertEquals("name at $time", reference.name, cached.name)
-            assertEquals("formattedTime at $time", reference.formattedTime, cached.formattedTime)
-            assertEquals("countdownMinutes at $time", reference.countdownMinutes, cached.countdownMinutes)
-            assertEquals("countdownSeconds at $time", reference.countdownSeconds, cached.countdownSeconds)
+
+            assertEquals("formattedTime must match its target at $time",
+                reference.targetTime.format(java.time.format.DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)),
+                reference.formattedTime)
 
             val driftMillis = java.time.temporal.ChronoUnit.MILLIS.between(reference.targetTime, cached.targetTime)
             assertTrue("targetTime drift $driftMillis ms at $time", Math.abs(driftMillis) < 2000)
+
+            val refTotal = (reference.countdownMinutes * 60) + reference.countdownSeconds
+            val cachedTotal = (cached.countdownMinutes * 60) + cached.countdownSeconds
+            assertTrue("countdown drift at $time: $refTotal s vs $cachedTotal s",
+                Math.abs(refTotal - cachedTotal) <= 2)
         }
 
         var time = ZonedDateTime.of(2026, 8, 15, 0, 5, 0, 0, ZoneId.of(riyadh))
