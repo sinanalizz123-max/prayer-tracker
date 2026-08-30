@@ -119,4 +119,130 @@ class PrayerCalculatorTest {
         assertEquals("Fajr", PrayerCalculator.getCurrentActivePrayer(schedule, afterFajr))
         assertEquals("Isha", PrayerCalculator.getCurrentActivePrayer(schedule, lateNight))
     }
+
+    @Test
+    fun `all calculation methods produce an ordered schedule`() {
+        for (method in 0..9) {
+            val methodSettings = TestSettings(calculationMethod = method, locationName = "Makkah")
+            val schedule = PrayerCalculator.calculateSchedule(makkahLat, makkahLon, riyadh, date, methodSettings)
+
+            assertTrue("method $method: fajr before sunrise", schedule.fajr.isBefore(schedule.sunrise))
+            assertTrue("method $method: sunrise before dhuhr", schedule.sunrise.isBefore(schedule.dhuhr))
+            assertTrue("method $method: dhuhr before asr", schedule.dhuhr.isBefore(schedule.asr))
+            assertTrue("method $method: asr before maghrib", schedule.asr.isBefore(schedule.maghrib))
+            assertTrue("method $method: maghrib before isha", schedule.maghrib.isBefore(schedule.isha))
+            assertEquals("method $method: schedule belongs to requested date", date, schedule.list.first().time.toLocalDate())
+        }
+    }
+
+    @Test
+    fun `hanafi asr is later than shafi asr`() {
+        val shafi = PrayerCalculator.calculateSchedule(
+            makkahLat, makkahLon, riyadh, date, TestSettings(madhab = 0, locationName = "Makkah")
+        )
+        val hanafi = PrayerCalculator.calculateSchedule(
+            makkahLat, makkahLon, riyadh, date, TestSettings(madhab = 1, locationName = "Makkah")
+        )
+
+        assertTrue(hanafi.asr.isAfter(shafi.asr))
+        val gapMinutes = java.time.temporal.ChronoUnit.MINUTES.between(shafi.asr, hanafi.asr)
+        assertTrue("Hanafi Asr should lag Shafi Asr by 30-180 minutes, was $gapMinutes", gapMinutes in 30..180)
+    }
+
+    @Test
+    fun `high latitude schedules stay ordered across rules and seasons`() {
+        val latitude = 64.1466
+        val longitude = -21.9426
+        val zone = "Atlantic/Reykjavik"
+        val dates = listOf(LocalDate.of(2026, 3, 21), LocalDate.of(2026, 6, 21), LocalDate.of(2026, 12, 21))
+
+        for (date in dates) {
+            for (rule in 0..2) {
+                val schedule = PrayerCalculator.calculateSchedule(
+                    latitude, longitude, zone, date, TestSettings(highLatitudeRule = rule, locationName = "Reykjavik")
+                )
+                assertTrue("rule=$rule date=$date", schedule.fajr.isBefore(schedule.sunrise))
+                assertTrue("rule=$rule date=$date", schedule.sunrise.isBefore(schedule.dhuhr))
+                assertTrue("rule=$rule date=$date", schedule.dhuhr.isBefore(schedule.asr))
+                assertTrue("rule=$rule date=$date", schedule.asr.isBefore(schedule.maghrib))
+                assertTrue("rule=$rule date=$date", schedule.maghrib.isBefore(schedule.isha))
+            }
+        }
+    }
+
+    @Test
+    fun `high latitude location computes a full schedule`() {
+        val schedule = PrayerCalculator.calculateSchedule(
+            61.2181, -149.9003, "America/Anchorage", LocalDate.of(2026, 6, 21),
+            TestSettings(highLatitudeRule = 1, locationName = "Anchorage")
+        )
+        assertEquals(LocalDate.of(2026, 6, 21), schedule.date)
+        assertEquals(6, schedule.list.size)
+    }
+
+    @Test
+    fun `schedule honors the requested timezone`() {
+        val riyadhSchedule = PrayerCalculator.calculateSchedule(makkahLat, makkahLon, "Asia/Riyadh", date, settings)
+        val nySchedule = PrayerCalculator.calculateSchedule(makkahLat, makkahLon, "America/New_York", date, settings)
+
+        assertEquals(ZoneId.of("Asia/Riyadh"), riyadhSchedule.fajr.zone)
+        assertEquals(ZoneId.of("America/New_York"), nySchedule.fajr.zone)
+
+        val nearestDay = setOf(date, date.minusDays(1), date.plusDays(1))
+        assertTrue("NY schedule must fall within one day of $date",
+            nySchedule.list.any { it.time.toLocalDate() in nearestDay })
+
+        val offsetDifferenceHours = Math.abs(
+            nySchedule.fajr.offset.totalSeconds - riyadhSchedule.fajr.offset.totalSeconds
+        ) / 3600.0
+        assertTrue(offsetDifferenceHours >= 6)
+    }
+
+    @Test
+    fun `next prayer crosses midnight into next day fajr`() {
+        val now = ZonedDateTime.of(2026, 8, 15, 23, 45, 0, 0, ZoneId.of(riyadh))
+        val next = PrayerCalculator.getNextPrayer(makkahLat, makkahLon, riyadh, now, settings)
+
+        assertEquals("FAJR", next.name)
+        assertEquals(LocalDate.of(2026, 8, 16), next.targetTime.toLocalDate())
+        assertTrue(next.countdownMinutes in 240..420)
+    }
+
+    @Test
+    fun `cached schedules produce identical next prayer results`() {
+        val todaySchedule = PrayerCalculator.calculateSchedule(makkahLat, makkahLon, riyadh, date, settings)
+        val tomorrowSchedule = PrayerCalculator.calculateSchedule(makkahLat, makkahLon, riyadh, date.plusDays(1), settings)
+
+        fun checkEquivalent(reference: PrayerCalculator.NextPrayerInfo, cached: PrayerCalculator.NextPrayerInfo, time: ZonedDateTime) {
+            assertEquals("name at $time", reference.name, cached.name)
+            assertEquals("formattedTime at $time", reference.formattedTime, cached.formattedTime)
+            assertEquals("countdownMinutes at $time", reference.countdownMinutes, cached.countdownMinutes)
+            assertEquals("countdownSeconds at $time", reference.countdownSeconds, cached.countdownSeconds)
+
+            val driftMillis = java.time.temporal.ChronoUnit.MILLIS.between(reference.targetTime, cached.targetTime)
+            assertTrue("targetTime drift $driftMillis ms at $time", Math.abs(driftMillis) < 2000)
+        }
+
+        var time = ZonedDateTime.of(2026, 8, 15, 0, 5, 0, 0, ZoneId.of(riyadh))
+        val end = ZonedDateTime.of(2026, 8, 16, 0, 0, 0, 0, ZoneId.of(riyadh))
+
+        var samplesChecked = 0
+        while (time.isBefore(end)) {
+            val reference = PrayerCalculator.getNextPrayer(makkahLat, makkahLon, riyadh, time, settings)
+            val cached = PrayerCalculator.getNextPrayer(todaySchedule, tomorrowSchedule, time)
+            checkEquivalent(reference, cached, time)
+            time = time.plusMinutes(15)
+            samplesChecked++
+        }
+        assertTrue(samplesChecked >= 90)
+
+        for (time in listOf(
+            ZonedDateTime.of(2026, 8, 15, 12, 30, 0, 456000000, ZoneId.of(riyadh)),
+            ZonedDateTime.of(2026, 8, 15, 23, 59, 30, 0, ZoneId.of(riyadh))
+        )) {
+            val reference = PrayerCalculator.getNextPrayer(makkahLat, makkahLon, riyadh, time, settings)
+            val cached = PrayerCalculator.getNextPrayer(todaySchedule, tomorrowSchedule, time)
+            checkEquivalent(reference, cached, time)
+        }
+    }
 }

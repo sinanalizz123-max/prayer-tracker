@@ -144,18 +144,29 @@ object PrayerCalculator {
         settings: PrayerSettings
     ): NextPrayerInfo {
         val today = now.toLocalDate()
-        val tomorrow = today.plusDays(1)
+        val todaySchedule = calculateSchedule(lat, lon, timezoneId, today, settings)
+        val tomorrowSchedule = calculateSchedule(lat, lon, timezoneId, today.plusDays(1), settings)
+        return getNextPrayer(todaySchedule, tomorrowSchedule, now)
+    }
 
-        val scheduleToday = calculateSchedule(lat, lon, timezoneId, today, settings)
-        val scheduleTomorrow = calculateSchedule(lat, lon, timezoneId, tomorrow, settings)
-
+    /**
+     * Countdown logic against already-calculated today/tomorrow schedules. Cheap
+     * enough to run every second while the app is on screen; callers are expected
+     * to keep the two schedules cached and rebuild them only when the inputs
+     * (date, location, timezone, method, madhab, high-latitude rule, offsets) change.
+     */
+    fun getNextPrayer(
+        todaySchedule: PrayerSchedule,
+        tomorrowSchedule: PrayerSchedule,
+        now: ZonedDateTime
+    ): NextPrayerInfo {
         val prospectivePrayers = listOf(
-            Pair("FAJR", scheduleToday.fajr),
-            Pair("DHUHR", scheduleToday.dhuhr),
-            Pair("ASR", scheduleToday.asr),
-            Pair("MAGHRIB", scheduleToday.maghrib),
-            Pair("ISHA", scheduleToday.isha),
-            Pair("FAJR", scheduleTomorrow.fajr)
+            Pair("FAJR", todaySchedule.fajr),
+            Pair("DHUHR", todaySchedule.dhuhr),
+            Pair("ASR", todaySchedule.asr),
+            Pair("MAGHRIB", todaySchedule.maghrib),
+            Pair("ISHA", todaySchedule.isha),
+            Pair("FAJR", tomorrowSchedule.fajr)
         )
 
         var nextPrayer: Pair<String, ZonedDateTime>? = null
@@ -166,7 +177,7 @@ object PrayerCalculator {
             }
         }
 
-        val selected = nextPrayer ?: Pair("FAJR", scheduleTomorrow.fajr)
+        val selected = nextPrayer ?: Pair("FAJR", tomorrowSchedule.fajr)
 
         val target = selected.second
         val totalSeconds = ChronoUnit.SECONDS.between(now, target).coerceAtLeast(0)

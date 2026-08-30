@@ -241,3 +241,16 @@ class SettingsManager(private val context: Context) : PrayerSettings {
             notifyChanged()
         }
 }
+
+/**
+ * Resolves a persisted geographic coordinate. Newer writes store full-precision
+ * strings; older versions persisted floats, which lose precision. The float is kept
+ * as a backward-compatible fallback so saved locations from existing installs
+ * survive the migration unchanged.
+ */
+internal fun resolveStoredCoordinate(precise: String?, legacy: Float): Double {
+    precise?.let { stored ->
+        stored.toDoubleOrNull()?.let { return it }
+    }
+    return legacy.toDouble()
+}
