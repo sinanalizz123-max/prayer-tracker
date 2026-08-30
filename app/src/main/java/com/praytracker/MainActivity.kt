@@ -60,14 +60,19 @@ class MainActivity : ComponentActivity() {
             }
 
             PrayerTimesTheme(darkTheme = isDarkTheme) {
-                MainApp(viewModel = viewModel)
+                // Reading and passing down settingsChanged subscribes this root scope to
+                // every settings write. Any write recomposes the tree below (the viewModel
+                // parameter is unstable), so theme, numerals and toggle/radio states are
+                // re-sampled from preferences immediately instead of after an app restart.
+                MainApp(viewModel = viewModel, settingsChanged = settingsChanged)
             }
         }
     }
 }
 
 @Composable
-fun MainApp(viewModel: MainViewModel) {
+@Suppress("UNUSED_PARAMETER")
+fun MainApp(viewModel: MainViewModel, settingsChanged: Long) {
     val currentTab by viewModel.currentTab.collectAsState()
     val currentSubPage by viewModel.currentMoreSubPage.collectAsState()
 
