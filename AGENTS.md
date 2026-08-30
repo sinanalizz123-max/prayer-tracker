@@ -27,6 +27,20 @@ Run everything from the repository root:
 - Robolectric is NOT supported on this machine (Linux aarch64) — do not add
   Robolectric/Gradle Managed Device tests here.
 
+## Release & signing
+
+- Distribution is GitHub Releases only — **no Google Play**.
+- `.github/workflows/release.yml` runs on tag pushes `v*`: it decodes the
+  keystore from `PRAYTRACKER_KEYSTORE_BASE64`, builds `assembleRelease` (signed
+  via env vars), verifies the signature, and attaches the APK to the release.
+- The release signing config in `app/build.gradle.kts` activates only when
+  `PRAYTRACKER_KEYSTORE_PATH/PASSWORD`, `PRAYTRACKER_KEY_ALIAS`,
+  `PRAYTRACKER_KEY_PASSWORD` are present (env or `~/.gradle/gradle.properties`).
+- NEVER commit keystores (`*.jks`, `*.keystore`, `keystore.properties`) — they
+  are gitignored; never print or log any signing secret.
+- When preparing a release: bump `versionCode`/`versionName`, commit, tag
+  `vX.Y.Z`, push the tag; confirm the release workflow run is green.
+
 ## Unit tests
 
 `app/src/test/` contains pure JVM tests (`HijriHelperTest`,

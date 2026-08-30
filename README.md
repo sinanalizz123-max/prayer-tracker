@@ -49,7 +49,7 @@ A private, offline-first Android app for prayer times, the Hijri calendar, and Q
 │       │   │                # AlarmScheduler/Receiver, location utilities
 │       │   └── ...          # MainActivity, application class, widgets
 │       └── test/            # JVM unit tests (HijriHelper, PrayerCalculator)
-└── .github/workflows/       # CI: build debug APK + run unit tests
+└── .github/workflows/       # CI: build debug APK + unit tests; signed release build
 ```
 
 ## Getting started
@@ -77,8 +77,17 @@ A private, offline-first Android app for prayer times, the Hijri calendar, and Q
 ```
 
 The debug APK is written to `app/build/outputs/apk/debug/app-debug.apk`.
+The release APK (signed where signing material is configured) is written to
+`app/build/outputs/apk/release/app-release.apk`.
 
 ### Install
+
+Users install the app from **GitHub Releases** — no Google Play. Get the latest
+`PrayerTracker-vX.Y.Z.apk` from
+<https://github.com/sinanalizz123-max/prayer-tracker/releases> and install it on
+an Android device (API 26+).
+
+For local development:
 
 ```bash
 adb install -r app/build/outputs/apk/debug/app-debug.apk
@@ -95,6 +104,36 @@ The `build.yml` workflow runs on every push to `main` and on pull requests:
    results as the `unit-test-results` artifact (on failure).
 
 You can also run it manually from the Actions tab (workflow_dispatch).
+
+### Releases & signing
+
+Distribution is **GitHub Releases only**. Pushing a tag named `vX.Y.Z` triggers
+the `release.yml` workflow, which builds a *signed* release APK and attaches it
+to the GitHub Release automatically.
+
+The keystore and its passwords are **never committed**. The `release` signing
+config in `app/build.gradle.kts` is only activated when these are present in the
+environment (CI) or in `~/.gradle/gradle.properties` (local):
+
+| Variable                    | Purpose                             |
+| --------------------------- | ----------------------------------- |
+| `PRAYTRACKER_KEYSTORE_PATH` | Absolute path to the `.jks` file    |
+| `PRAYTRACKER_KEYSTORE_PASSWORD` | Keystore password               |
+| `PRAYTRACKER_KEY_ALIAS`     | Signing key alias                   |
+| `PRAYTRACKER_KEY_PASSWORD`  | Signing key password                |
+
+GitHub Secrets needed for CI (see the workflow for exact names):
+
+| Secret                        | Value                                                     |
+| ----------------------------- | --------------------------------------------------------- |
+| `PRAYTRACKER_KEYSTORE_BASE64` | `base64 -w0` of `prayer-tracker-release.jks` (one line)   |
+| `PRAYTRACKER_KEYSTORE_PASSWORD` | Keystore password                                       |
+| `PRAYTRACKER_KEY_ALIAS`       | Signing key alias                                         |
+| `PRAYTRACKER_KEY_PASSWORD`    | Signing key password                                      |
+
+To release: bump `versionCode`/`versionName` in `app/build.gradle.kts`, commit,
+then `git tag vX.Y.Z && git push origin vX.Y.Z`. The workflow publishes a signed
+`PrayerTracker-vX.Y.Z.apk` under <https://github.com/sinanalizz123-max/prayer-tracker/releases>.
 
 ## Documentation
 

@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented in this file.
 
+## [Unreleased]
+
+### Added
+- Release distribution via GitHub Releases only.
+- `release` signing config in `app/build.gradle.kts`: keystore material is read
+  from environment variables (CI) or `~/.gradle/gradle.properties` (local) at
+  build time; the keystore and passwords are never committed to the repository.
+- `.github/workflows/release.yml`: pushing tag `vX.Y.Z` builds the signed
+  release APK and attaches it to the GitHub Release automatically.
+
 ## [1.0.2] - 2026-08-30
 
 ### Fixed

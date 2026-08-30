@@ -43,6 +43,7 @@ jobs:
           name: prayer-tracker-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+          retention-days: 7
 
       - name: Upload unit test results
         if: failure()
@@ -51,3 +52,4 @@ jobs:
           name: unit-test-results
           path: app/build/reports/tests/
           if-no-files-found: ignore
+          retention-days: 7

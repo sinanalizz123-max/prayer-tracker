@@ -5,6 +5,21 @@ plugins {
     id("com.google.devtools.ksp")
 }
 
+// Release signing material is injected at build time only — never committed.
+// Precedence: environment variable (GitHub Actions) then user-level
+// ~/.gradle/gradle.properties (local builds). The keystore itself must never
+// live inside the repository.
+fun signingVar(name: String): String? =
+    System.getenv(name) ?: (project.findProperty(name) as String?)
+
+val signingKeystorePath = signingVar("PRAYTRACKER_KEYSTORE_PATH")
+val signingKeystorePassword = signingVar("PRAYTRACKER_KEYSTORE_PASSWORD")
+val signingKeyAlias = signingVar("PRAYTRACKER_KEY_ALIAS")
+val signingKeyPassword = signingVar("PRAYTRACKER_KEY_PASSWORD")
+val releaseSigningAvailable = listOf(
+    signingKeystorePath, signingKeystorePassword, signingKeyAlias, signingKeyPassword
+).none { it.isNullOrBlank() }
+
 android {
     namespace = "com.praytracker"
     compileSdk = 35
@@ -19,6 +34,17 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        if (releaseSigningAvailable) {
+            create("release") {
+                storeFile = project.file(requireNotNull(signingKeystorePath))
+                storePassword = requireNotNull(signingKeystorePassword)
+                keyAlias = requireNotNull(signingKeyAlias)
+                keyPassword = requireNotNull(signingKeyPassword)
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -26,6 +52,9 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            if (releaseSigningAvailable) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
     compileOptions {
