@@ -41,6 +41,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -67,6 +68,12 @@ fun SettingsScreen(
     onNavigateToAbout: () -> Unit
 ) {
     val settings = viewModel.settings
+
+    // This screen renders many rows by reading settings through plain getters at
+    // composition time, so subscribe to the change counter here. When any setting
+    // is written, this scope recomposes and re-reads those getters immediately.
+    val settingsChanged by viewModel.settings.settingsChanged.collectAsState()
+    remember(settingsChanged) { }
 
     var showCalcMethodDialog by remember { mutableStateOf(false) }
     var showMadhabDialog by remember { mutableStateOf(false) }
@@ -401,7 +408,7 @@ fun SettingsScreen(
             item {
                 SettingsClickableRow(
                     title = "About Prayer Times",
-                    subtitle = "Version 1.0 • Offline-first, Private",
+                    subtitle = "Version 1.0.1 • Offline-first, Private",
                     onClick = onNavigateToAbout
                 )
             }

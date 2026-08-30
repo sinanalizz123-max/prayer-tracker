@@ -74,6 +74,10 @@ fun HijriCalendarBottomSheet(
     val hijriCurrent by viewModel.hijriDate.collectAsState()
     val settings = viewModel.settings
 
+    // Reading settingsChanged keeps this sheet subscribed to settings writes so the
+    // getter-backed values below (adjustment, Arabic numerals toggle) refresh live.
+    remember(settingsChanged) { }
+
     val currentHijriMonth = hijriCurrent.month
     val currentHijriYear = hijriCurrent.year
     val hijriAdjustment = settings.hijriAdjustment

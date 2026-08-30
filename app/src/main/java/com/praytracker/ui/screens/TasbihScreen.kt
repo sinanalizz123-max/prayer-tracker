@@ -70,6 +70,9 @@ fun TasbihScreen(
 ) {
     val tasbihList by viewModel.tasbihList.collectAsState()
     val settingsChanged by viewModel.settings.settingsChanged.collectAsState()
+    // Reading settingsChanged keeps this screen subscribed to settings writes so the
+    // getter-backed values below (selected dhikr, translation preference) refresh live.
+    remember(settingsChanged) { }
     val selectedId = viewModel.settings.selectedTasbihId
     val showTranslation = viewModel.settings.showTasbihTranslation
 
