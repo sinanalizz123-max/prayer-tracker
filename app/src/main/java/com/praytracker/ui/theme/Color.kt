@@ -2,22 +2,24 @@ package com.praytracker.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Emerald90 = Color(0xFFB6F0DC)
-val EmeraldGreen = Color(0xFF14463D)
-val EmeraldDark = Color(0xFF0E332C)
-val Sand = Color(0xFFF6EFE4)
-val Gold = Color(0xFFD9A441)
+// Brand Colors from Screenshot
+val EmeraldGreen = Color(0xFF00A86B)
+val EmeraldGreenDark = Color(0xFF008F5B)
+val EmeraldGreenContainer = Color(0xFF0F6048)
+val ActivePrayerPurple = Color(0xFF5856D6)
+val ActivePrayerPurpleLight = Color(0xFF4F46E5)
 
-val PRAYER_FAJR = Color(0xFF44647E)
-val PRAYER_DHUHR = Color(0xFF2E7D56)
-val PRAYER_ASR = Color(0xFF8A6D2F)
-val PRAYER_MAGHRIB = Color(0xFFB5542F)
-val PRAYER_ISHA = Color(0xFF3F4E9E)
+// Light Theme Palette
+val LightBackground = Color(0xFFF6F8FA)
+val LightSurface = Color(0xFFFFFFFF)
+val LightSurfaceVariant = Color(0xFFEEF2F6)
+val LightTextPrimary = Color(0xFF111827)
+val LightTextSecondary = Color(0xFF6B7280)
 
-fun com.praytracker.prayer.Prayer.color(): Color = when (this) {
-    com.praytracker.prayer.Prayer.FAJR -> PRAYER_FAJR
-    com.praytracker.prayer.Prayer.DHUHR -> PRAYER_DHUHR
-    com.praytracker.prayer.Prayer.ASR -> PRAYER_ASR
-    com.praytracker.prayer.Prayer.MAGHRIB -> PRAYER_MAGHRIB
-    com.praytracker.prayer.Prayer.ISHA -> PRAYER_ISHA
-}
+// Dark Theme Palette
+val DarkBackground = Color(0xFF080C0F)
+val DarkSurface = Color(0xFF13181E)
+val DarkSurfaceVariant = Color(0xFF1C232B)
+val DarkTextPrimary = Color(0xFFF9FAFB)
+val DarkTextSecondary = Color(0xFF9CA3AF)
+

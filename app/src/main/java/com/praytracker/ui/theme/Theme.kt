@@ -7,40 +7,58 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-private val LightColors = lightColorScheme(
+private val DarkColorScheme = darkColorScheme(
     primary = EmeraldGreen,
     onPrimary = Color.White,
-    primaryContainer = Emerald90,
-    onPrimaryContainer = EmeraldDark,
-    secondary = Gold,
-    onSecondary = Color.Black,
-    background = Sand,
-    onBackground = EmeraldDark,
-    surface = Color.White,
-    onSurface = EmeraldDark,
+    primaryContainer = Color(0xFF064E3B),
+    onPrimaryContainer = Color(0xFFA7F3D0),
+    secondary = ActivePrayerPurple,
+    onSecondary = Color.White,
+    secondaryContainer = Color(0xFF312E81),
+    onSecondaryContainer = Color(0xFFE0E7FF),
+    background = DarkBackground,
+    onBackground = DarkTextPrimary,
+    surface = DarkSurface,
+    onSurface = DarkTextPrimary,
+    surfaceVariant = DarkSurfaceVariant,
+    onSurfaceVariant = DarkTextSecondary
 )
 
-private val DarkColors = darkColorScheme(
-    primary = Emerald90,
-    onPrimary = EmeraldDark,
-    primaryContainer = EmeraldDark,
-    onPrimaryContainer = Emerald90,
-    secondary = Gold,
-    onSecondary = Color.Black,
-    background = Color(0xFF0B1B17),
-    onBackground = Color(0xFFE6EFEB),
-    surface = Color(0xFF132822),
-    onSurface = Color(0xFFE6EFEB),
+private val LightColorScheme = lightColorScheme(
+    primary = EmeraldGreen,
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFFE6F7EF),
+    onPrimaryContainer = Color(0xFF006842),
+    secondary = ActivePrayerPurple,
+    onSecondary = Color.White,
+    secondaryContainer = Color(0xFFEEF2FF),
+    onSecondaryContainer = Color(0xFF3730A3),
+    background = LightBackground,
+    onBackground = LightTextPrimary,
+    surface = LightSurface,
+    onSurface = LightTextPrimary,
+    surfaceVariant = LightSurfaceVariant,
+    onSurfaceVariant = LightTextSecondary
 )
 
 @Composable
-fun PrayerTrackerTheme(
+fun PrayerTimesTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    content: @Composable () -> Unit,
+    content: @Composable () -> Unit
 ) {
+    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
+
     MaterialTheme(
-        colorScheme = if (darkTheme) DarkColors else LightColors,
-        typography = AppTypography,
-        content = content,
+        colorScheme = colorScheme,
+        typography = Typography,
+        content = content
     )
+}
+
+@Composable
+fun MyApplicationTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    content: @Composable () -> Unit
+) {
+    PrayerTimesTheme(darkTheme = darkTheme, content = content)
 }
