@@ -34,7 +34,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -76,14 +75,6 @@ fun SettingsScreen(
 
     val autoLocation by remember(settingsVersion) { mutableStateOf(settings.isAutomaticLocation) }
     val arabicNumerals by remember(settingsVersion) { mutableStateOf(settings.useArabicNumerals) }
-    val masterNotification by remember(settingsVersion) { mutableStateOf(settings.isMasterNotificationEnabled) }
-    val fajrNotif by remember(settingsVersion) { mutableStateOf(settings.isFajrNotificationEnabled) }
-    val dhuhrNotif by remember(settingsVersion) { mutableStateOf(settings.isDhuhrNotificationEnabled) }
-    val asrNotif by remember(settingsVersion) { mutableStateOf(settings.isAsrNotificationEnabled) }
-    val maghribNotif by remember(settingsVersion) { mutableStateOf(settings.isMaghribNotificationEnabled) }
-    val ishaNotif by remember(settingsVersion) { mutableStateOf(settings.isIshaNotificationEnabled) }
-    val silentAlerts by remember(settingsVersion) { mutableStateOf(settings.isCustomSoundEnabled) }
-    val reminderDelay by remember(settingsVersion) { mutableStateOf(settings.reminderDelayMinutes) }
     val showTranslation by remember(settingsVersion) { mutableStateOf(settings.showTasbihTranslation) }
     val hapticFeedback by remember(settingsVersion) { mutableStateOf(settings.isHapticFeedbackEnabled) }
     val themeLabel by remember(settingsVersion) { mutableStateOf(settings.appTheme.replaceFirstChar { it.uppercase() }) }
@@ -281,106 +272,6 @@ fun SettingsScreen(
                             }
                         }
                     }
-                }
-            }
-
-            item {
-                Spacer(modifier = Modifier.height(10.dp))
-                SettingsHeader(title = "Notifications & Reminders", icon = Icons.Default.Notifications)
-            }
-
-            item {
-                SettingsToggleRow(
-                    title = "Enable Notifications",
-                    subtitle = "Receive reminders at prayer times",
-                    checked = masterNotification,
-                    onCheckedChange = {
-                        settings.isMasterNotificationEnabled = it
-                        viewModel.onSettingsChanged()
-                        refreshKey++
-                    }
-                )
-            }
-
-            if (masterNotification) {
-                item {
-                    Card(
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text(
-                                text = "Individual Prayer Reminders",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                            Spacer(modifier = Modifier.height(6.dp))
-
-                            PrayerReminderToggle("Fajr", fajrNotif) {
-                                settings.isFajrNotificationEnabled = it
-                                viewModel.onSettingsChanged()
-                                refreshKey++
-                            }
-                            PrayerReminderToggle("Dhuhr", dhuhrNotif) {
-                                settings.isDhuhrNotificationEnabled = it
-                                viewModel.onSettingsChanged()
-                                refreshKey++
-                            }
-                            PrayerReminderToggle("Asr", asrNotif) {
-                                settings.isAsrNotificationEnabled = it
-                                viewModel.onSettingsChanged()
-                                refreshKey++
-                            }
-                            PrayerReminderToggle("Maghrib", maghribNotif) {
-                                settings.isMaghribNotificationEnabled = it
-                                viewModel.onSettingsChanged()
-                                refreshKey++
-                            }
-                            PrayerReminderToggle("Isha", ishaNotif) {
-                                settings.isIshaNotificationEnabled = it
-                                viewModel.onSettingsChanged()
-                                refreshKey++
-                            }
-                        }
-                    }
-                }
-
-                item {
-                    Card(
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text(
-                                text = "Follow-up Reminder: $reminderDelay min after",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                            Spacer(modifier = Modifier.height(6.dp))
-                            Slider(
-                                value = reminderDelay.toFloat(),
-                                onValueChange = {
-                                    settings.reminderDelayMinutes = it.toInt()
-                                    viewModel.onSettingsChanged()
-                                    refreshKey++
-                                },
-                                valueRange = 0f..45f,
-                                steps = 8
-                            )
-                        }
-                    }
-                }
-
-                item {
-                    SettingsToggleRow(
-                        title = "Silent Alerts",
-                        subtitle = if (silentAlerts) "Prayer alerts silent (no sound/vibration)" else "Default notification sound & vibration",
-                        checked = silentAlerts,
-                        onCheckedChange = {
-                            settings.isCustomSoundEnabled = it
-                            refreshKey++
-                        }
-                    )
                 }
             }
 
@@ -676,24 +567,6 @@ fun SettingsScreen(
                 }
             }
         )
-    }
-}
-
-@Composable
-fun PrayerReminderToggle(
-    name: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(name, style = MaterialTheme.typography.bodyMedium)
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
     }
 }
 

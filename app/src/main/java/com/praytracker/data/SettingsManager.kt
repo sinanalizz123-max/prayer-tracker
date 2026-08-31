@@ -204,6 +204,13 @@ class SettingsManager(private val context: Context) : PrayerSettings {
             notifyChanged()
         }
 
+    var notificationToneUri: String
+        get() = prefs.getString("notification_tone_uri", "") ?: ""
+        set(value) {
+            prefs.edit().putString("notification_tone_uri", value).apply()
+            notifyChanged()
+        }
+
     // --- TASBIH SETTINGS ---
     var selectedTasbihId: Int
         get() = prefs.getInt("selected_tasbih_id", 1) // default preloaded ID is 1

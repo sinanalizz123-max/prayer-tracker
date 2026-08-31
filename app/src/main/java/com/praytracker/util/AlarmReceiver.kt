@@ -6,6 +6,7 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
@@ -73,11 +74,16 @@ class AlarmReceiver : BroadcastReceiver() {
             .setAutoCancel(true)
 
         // Use custom sound settings if enabled: silent alerts (silent=true) or the
-        // default system notification sound & vibration
+        // selected notification tone (or the default system sound if none chosen)
         if (settings.isCustomSoundEnabled) {
             builder.setSilent(true)
         } else {
-            builder.setDefaults(NotificationCompat.DEFAULT_SOUND or NotificationCompat.DEFAULT_VIBRATE)
+            val toneUri = settings.notificationToneUri
+            if (toneUri.isNotBlank()) {
+                builder.setSound(Uri.parse(toneUri))
+            } else {
+                builder.setDefaults(NotificationCompat.DEFAULT_SOUND or NotificationCompat.DEFAULT_VIBRATE)
+            }
         }
 
         // Notification IDs: 1 for Fajr, 2 for Dhuhr, etc. Follow-ups use +10 so
