@@ -13,7 +13,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -35,152 +34,56 @@ import com.praytracker.ui.MainViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NotificationSettingsScreen(
-    viewModel: MainViewModel,
-    onBack: () -> Unit
-) {
+fun NotificationSettingsScreen(viewModel: MainViewModel, onBack: () -> Unit) {
     val settings = viewModel.settings
-    val settingsVersion by settings.settingsChanged.collectAsState()
-    remember(settingsVersion) { }
-
+    val version by settings.settingsChanged.collectAsState()
+    remember(version) { }
     val master = settings.isMasterNotificationEnabled
-    val beforeEnabled = settings.isPreReminderEnabled
-    val beforeDelay = settings.preReminderMinutes
-    val afterDelay = settings.reminderDelayMinutes
-    val vibration = settings.isNotificationVibrationEnabled
-    val silent = settings.isCustomSoundEnabled
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Prayer Notifications", fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
-        }
-    ) { padding ->
+    Scaffold(topBar = {
+        TopAppBar(
+            title = { Text("Prayer Notifications", fontWeight = FontWeight.Bold) },
+            navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") } }
+        )
+    }) { padding ->
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 20.dp),
+            modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
+            item { Spacer(Modifier.height(8.dp)); NotificationSectionLabel("Prayer alerts") }
             item {
-                Spacer(Modifier.height(8.dp))
-                NotificationSectionLabel("General")
+                SettingsToggleRow("Prayer notifications", "Enable or disable all prayer alerts", master) {
+                    settings.isMasterNotificationEnabled = it; viewModel.onSettingsChanged()
+                }
             }
-            item {
-                SettingsToggleRow(
-                    title = "Prayer notifications",
-                    subtitle = "Enable or disable all prayer alerts",
-                    checked = master,
-                    onCheckedChange = {
-                        settings.isMasterNotificationEnabled = it
-                        viewModel.onSettingsChanged()
-                    }
-                )
-            }
-
             if (master) {
+                item { NotificationPrayerRow("Fajr", settings.isFajrNotificationEnabled) { settings.isFajrNotificationEnabled = it; viewModel.onSettingsChanged() } }
+                item { NotificationPrayerRow("Dhuhr", settings.isDhuhrNotificationEnabled) { settings.isDhuhrNotificationEnabled = it; viewModel.onSettingsChanged() } }
+                item { NotificationPrayerRow("Asr", settings.isAsrNotificationEnabled) { settings.isAsrNotificationEnabled = it; viewModel.onSettingsChanged() } }
+                item { NotificationPrayerRow("Maghrib", settings.isMaghribNotificationEnabled) { settings.isMaghribNotificationEnabled = it; viewModel.onSettingsChanged() } }
+                item { NotificationPrayerRow("Isha", settings.isIshaNotificationEnabled) { settings.isIshaNotificationEnabled = it; viewModel.onSettingsChanged() } }
+                item { NotificationSectionLabel("Reminder timing") }
                 item {
-                    NotificationSectionLabel("Prayer alerts")
-                }
-                item { NotificationPrayerRow("Fajr", settings.isFajrNotificationEnabled) {
-                    settings.isFajrNotificationEnabled = it; viewModel.onSettingsChanged()
-                } }
-                item { NotificationPrayerRow("Dhuhr", settings.isDhuhrNotificationEnabled) {
-                    settings.isDhuhrNotificationEnabled = it; viewModel.onSettingsChanged()
-                } }
-                item { NotificationPrayerRow("Asr", settings.isAsrNotificationEnabled) {
-                    settings.isAsrNotificationEnabled = it; viewModel.onSettingsChanged()
-                } }
-                item { NotificationPrayerRow("Maghrib", settings.isMaghribNotificationEnabled) {
-                    settings.isMaghribNotificationEnabled = it; viewModel.onSettingsChanged()
-                } }
-                item { NotificationPrayerRow("Isha", settings.isIshaNotificationEnabled) {
-                    settings.isIshaNotificationEnabled = it; viewModel.onSettingsChanged()
-                } }
-
-                item {
-                    NotificationSectionLabel("Reminder timing")
-                }
-                item {
-                    SettingsToggleRow(
-                        title = "Before-prayer reminder",
-                        subtitle = if (beforeEnabled) "$beforeDelay minutes before each prayer" else "Disabled",
-                        checked = beforeEnabled,
-                        onCheckedChange = {
-                            settings.isPreReminderEnabled = it
-                            viewModel.onSettingsChanged()
-                        }
-                    )
-                }
-                if (beforeEnabled) {
-                    item {
-                        Column(modifier = Modifier.fillMaxWidth()) {
-                            Text("Before reminder: $beforeDelay min", fontWeight = FontWeight.SemiBold)
-                            Slider(
-                                value = beforeDelay.toFloat(),
-                                onValueChange = {
-                                    settings.preReminderMinutes = it.toInt()
-                                    viewModel.onSettingsChanged()
-                                },
-                                valueRange = 5f..60f,
-                                steps = 10
-                            )
-                        }
+                    Column(Modifier.fillMaxWidth()) {
+                        Text("Follow-up reminder: ${settings.reminderDelayMinutes} min after", fontWeight = FontWeight.SemiBold)
+                        Slider(value = settings.reminderDelayMinutes.toFloat(), onValueChange = {
+                            settings.reminderDelayMinutes = it.toInt(); viewModel.onSettingsChanged()
+                        }, valueRange = 0f..45f, steps = 8)
                     }
                 }
-                item {
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        Text("Follow-up: $afterDelay min after", fontWeight = FontWeight.SemiBold)
-                        Slider(
-                            value = afterDelay.toFloat(),
-                            onValueChange = {
-                                settings.reminderDelayMinutes = it.toInt()
-                                viewModel.onSettingsChanged()
-                            },
-                            valueRange = 0f..45f,
-                            steps = 8
-                        )
-                    }
-                }
-
-                item {
-                    NotificationSectionLabel("Sound & vibration")
-                }
+                item { NotificationSectionLabel("Sound") }
                 item {
                     SettingsToggleRow(
-                        title = "Vibration",
-                        subtitle = if (vibration) "Use the device's notification vibration" else "No notification vibration",
-                        checked = vibration,
-                        onCheckedChange = {
-                            settings.isNotificationVibrationEnabled = it
-                            viewModel.onSettingsChanged()
-                        }
-                    )
+                        "Silent alerts",
+                        if (settings.isCustomSoundEnabled) "Notifications without sound" else "Use the normal system notification sound",
+                        settings.isCustomSoundEnabled
+                    ) { settings.isCustomSoundEnabled = it; viewModel.onSettingsChanged() }
                 }
-                item {
-                    SettingsToggleRow(
-                        title = "Silent alerts",
-                        subtitle = if (silent) "Notifications without sound" else "Use the normal notification sound",
-                        checked = silent,
-                        onCheckedChange = {
-                            settings.isCustomSoundEnabled = it
-                            viewModel.onSettingsChanged()
-                        }
-                    )
-                }
-
                 item {
                     Text(
-                        text = "Android controls the available notification sounds. This app keeps the choice simple: normal system alert or silent.",
+                        "Prayer alerts use Android's notification system. You can also control channel sound and vibration from Android notification settings.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.62f),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = .62f),
                         lineHeight = 18.sp
                     )
                 }
@@ -190,22 +93,16 @@ fun NotificationSettingsScreen(
     }
 }
 
-@Composable
-private fun NotificationSectionLabel(text: String) {
+@Composable private fun NotificationSectionLabel(text: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(Icons.Default.Notifications, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+        Icon(Icons.Default.Notifications, null, tint = MaterialTheme.colorScheme.primary)
         Spacer(Modifier.width(8.dp))
         Text(text, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
     }
 }
 
-@Composable
-private fun NotificationPrayerRow(name: String, enabled: Boolean, onCheckedChange: (Boolean) -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
+@Composable private fun NotificationPrayerRow(name: String, enabled: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
         Text(name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
         Switch(checked = enabled, onCheckedChange = onCheckedChange)
     }
