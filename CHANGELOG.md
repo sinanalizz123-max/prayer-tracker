@@ -1,35 +1,37 @@
 # Changelog
 
-All notable changes to this project are documented in this file.
+## 1.0.3
 
-## [Unreleased]
+### Performance
+- Prayer schedule recomputes only when its inputs (location, calculation
+  method, madhab, latitude rule, adjustments, hijri correction, date) change,
+  instead of every second.
+- Per-second countdown now reads cached today/tomorrow schedules; the hero
+  countdown card is the only subtree recomposing every tick.
+- Qibla heading and magnetic declination update at sensor rate only in the
+  small alignment pill and compass dial leaves, not the full screen.
 
-### Added
-- Release distribution via GitHub Releases only.
-- `release` signing config in `app/build.gradle.kts`: keystore material is read
-  from environment variables (CI) or `~/.gradle/gradle.properties` (local) at
-  build time; the keystore and passwords are never committed to the repository.
-- `.github/workflows/release.yml`: pushing tag `vX.Y.Z` builds the signed
-  release APK and attaches it to the GitHub Release automatically.
+### Reliability
+- Survive polar-day / polar-night locations (e.g. Longyearbyen): the adhan
+  library leaves Fajr/Isha `null` at extreme latitudes; the calculator now
+  substitutes ordered sentinel solar times only where null, so normal
+  locations are unaffected.
+- Alarm arming reconciles desired plan against armed plan and arms/cancels
+  only deltas, so firing one alarm no longer tears down and re-arms every
+  other alarm.
 
-## [1.0.2] - 2026-08-30
+### Data integrity
+- Coordinates persist as full-precision strings (`latitude_precise` /
+  `longitude_precise`) instead of 32-bit floats; old stored coordinates
+  migrate seamlessly.
 
-### Fixed
-- Theme changes now apply immediately (theme value is read at flow emission, not at composition).
-- Settings toggles (Arabic numerals, notifications, silent alerts, translation, haptics, GPS) now update the UI the moment they are changed.
-- Compass dial animates on the shortest angular path so the 359° → 1° wrap no longer spins the full dial.
-- Qibla direction is corrected from magnetic to true north using the local magnetic declination and is recomputed when the location changes.
-- Follow-up reminder is scheduled at the configured delay after each prayer; cancelling alarms clears follow-up codes too.
-- Silent Alerts toggle now actually silences the notification sound/vibration.
-- GPS permission is requested at tap time across the prayer list, settings, and location picker.
+### Tests (36 passing)
+- AlarmPlanBuilder — full plan, master-off, flag gating, past-day omission,
+  follow-up delays, code-range coverage.
+- PrayerCalculator — ordering across all 5 methods, Hanafi-Asr, high-latitude
+  rules and seasons, polar no-crash, timezone correctness, midnight
+  rollover, cached-schedule fidelity.
+- SettingsCoordinate — fallback, precision, invalid handling, round-trip.
 
-## [1.0.1] - 2026-08-30
-
-### Fixed
-- Settings changes now recompose the whole UI tree immediately instead of requiring an app restart.
-
-## [1.0.0] - 2026-08-30
-
-### Added
-- Initial port of the prayer tracker app to `com.praytracker`.
-- Prayer times, Hijri calendar, Tasbih, Qibla compass, reminders, and Glance widgets.
+## 1.0.2
+Initial repository release.
