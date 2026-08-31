@@ -71,7 +71,6 @@ fun PrayerTimesScreen(
     modifier: Modifier = Modifier
 ) {
     val schedule by viewModel.prayerSchedule.collectAsState()
-    val nextPrayer by viewModel.nextPrayerInfo.collectAsState()
     val hijri by viewModel.hijriDate.collectAsState()
     val activePrayer by viewModel.currentActivePrayer.collectAsState()
     val isDetecting by viewModel.isDetectingLocation.collectAsState()
@@ -258,6 +257,10 @@ fun PrayerTimesScreen(
 
         // Next Prayer Hero Card (Emerald Green Banner matching screenshot)
         item {
+            // The countdown changes every second; reading it only inside this
+            // subtree keeps the rest of the screen (location bar, date card,
+            // prayer list) from recomposing on every tick.
+            val tickingNextPrayer by viewModel.nextPrayerInfo.collectAsState()
             Card(
                 shape = RoundedCornerShape(22.dp),
                 colors = CardDefaults.cardColors(
@@ -284,7 +287,7 @@ fun PrayerTimesScreen(
                     Spacer(modifier = Modifier.height(6.dp))
 
                     Text(
-                        text = nextPrayer?.name ?: "--",
+                        text = tickingNextPrayer?.name ?: "--",
                         style = MaterialTheme.typography.headlineLarge,
                         fontWeight = FontWeight.ExtraBold,
                         color = Color.White
@@ -293,7 +296,7 @@ fun PrayerTimesScreen(
                     Spacer(modifier = Modifier.height(2.dp))
 
                     Text(
-                        text = nextPrayer?.formattedTime ?: "--:--",
+                        text = tickingNextPrayer?.formattedTime ?: "--:--",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.SemiBold,
                         color = Color.White.copy(alpha = 0.95f)
@@ -317,8 +320,8 @@ fun PrayerTimesScreen(
                                 modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
-                            val mins = nextPrayer?.countdownMinutes ?: 0
-                            val secs = nextPrayer?.countdownSeconds ?: 0
+                            val mins = tickingNextPrayer?.countdownMinutes ?: 0
+                            val secs = tickingNextPrayer?.countdownSeconds ?: 0
                             val countdownText = if (mins >= 60) {
                                 "- in ${mins / 60}h ${mins % 60}m ${secs}s"
                             } else {

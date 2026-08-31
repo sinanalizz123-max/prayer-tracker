@@ -66,7 +66,6 @@ fun QiblaScreen(
     viewModel: MainViewModel,
     modifier: Modifier = Modifier
 ) {
-    val heading by viewModel.trueHeading.collectAsState()
     val accuracy by viewModel.compassAccuracy.collectAsState()
     val qiblaAngle by viewModel.qiblaDirection.collectAsState()
     val isAvailable = viewModel.compassManager.isCompassAvailable
@@ -84,24 +83,6 @@ fun QiblaScreen(
             viewModel.compassManager.stop()
         }
     }
-
-    // Difference between device heading and Qibla
-    val diff = normalizeAngle(qiblaAngle - heading)
-    val isAligned = abs(diff) <= 3f || abs(diff - 360f) <= 3f
-
-    // Track the dial rotation continuously (unwrapped) and always animate the
-    // shortest angular path so crossing 359° -> 1° rotates by -2° instead of ~358°.
-    val rotationState = remember { Animatable(0f) }
-    LaunchedEffect(heading) {
-        val current = rotationState.value
-        val delta = shortestAngleDelta(current, -heading)
-        rotationState.animateTo(current + delta, animationSpec = tween(durationMillis = 200))
-    }
-
-    val alignmentColor by animateColorAsState(
-        targetValue = if (isAligned) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-        label = "AlignmentColor"
-    )
 
     Column(
         modifier = modifier
@@ -136,53 +117,143 @@ fun QiblaScreen(
 
             if (locationResolved) {
                 Spacer(modifier = Modifier.height(8.dp))
-
-                // Alignment Status Pill
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = if (isAligned) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
-                    modifier = Modifier.testTag("qibla_alignment_status")
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        if (isAligned) {
-                            Icon(
-                                imageVector = Icons.Default.CheckCircle,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "Facing the Kaaba",
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                        } else {
-                            val turnDirection = if (diff in 0f..180f || diff < -180f) "Turn Right" else "Turn Left"
-                            Text(
-                                text = turnDirection,
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                            )
-                        }
-                    }
-                }
+                AlignmentStatusPill(viewModel)
             }
         }
 
         // Compass Visual
         if (locationResolved) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .size(300.dp)
-                    .testTag("compass_dial")
+            CompassDial(viewModel)
+        } else {
+            LocationNeededCard(
+                onUseGps = requestLocation,
+                onChooseCity = { showLocationPickerSheet = true }
+            )
+        }
+
+        // Accuracy & Sensor Calibration Info
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                modifier = Modifier.fillMaxWidth()
             ) {
+                Row(
+                    modifier = Modifier.padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = if (!isAvailable) {
+                            "Compass sensor not detected on this device. Point device according to angle."
+                        } else if (accuracy == SensorManager.SENSOR_STATUS_UNRELIABLE) {
+                            "Low compass accuracy. Wave device in a figure-8 pattern to calibrate."
+                        } else {
+                            "Hold your phone flat and away from magnetic objects for highest accuracy."
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f)
+                    )
+                }
+            }
+        }
+
+        if (showLocationPickerSheet) {
+            LocationPickerBottomSheet(
+                viewModel = viewModel,
+                onDismiss = { showLocationPickerSheet = false }
+            )
+        }
+    }
+}
+
+@Composable
+private fun AlignmentStatusPill(viewModel: MainViewModel) {
+    // Heading + Qibla angle are read here so per-sensor-event updates recompose
+    // only this small pill, not the whole screen.
+    val heading by viewModel.trueHeading.collectAsState()
+    val qiblaAngle by viewModel.qiblaDirection.collectAsState()
+
+    // Difference between device heading and Qibla
+    val diff = normalizeAngle(qiblaAngle - heading)
+    val isAligned = abs(diff) <= 3f || abs(diff - 360f) <= 3f
+
+    // Alignment Status Pill
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = if (isAligned) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+        modifier = Modifier.testTag("qibla_alignment_status")
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (isAligned) {
+                Icon(
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = "Facing the Kaaba",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            } else {
+                val turnDirection = if (diff in 0f..180f || diff < -180f) "Turn Right" else "Turn Left"
+                Text(
+                    text = turnDirection,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CompassDial(viewModel: MainViewModel) {
+    val heading by viewModel.trueHeading.collectAsState()
+    val qiblaAngle by viewModel.qiblaDirection.collectAsState()
+
+    val diff = normalizeAngle(qiblaAngle - heading)
+    val isAligned = abs(diff) <= 3f || abs(diff - 360f) <= 3f
+
+    // Track the dial rotation continuously (unwrapped) and always animate the
+    // shortest angular path so crossing 359° -> 1° rotates by -2° instead of ~358°.
+    val rotationState = remember { Animatable(0f) }
+    LaunchedEffect(heading) {
+        val current = rotationState.value
+        val delta = shortestAngleDelta(current, -heading)
+        rotationState.animateTo(current + delta, animationSpec = tween(durationMillis = 200))
+    }
+
+    val alignmentColor by animateColorAsState(
+        targetValue = if (isAligned) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+        label = "AlignmentColor"
+    )
+
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .size(300.dp)
+            .testTag("compass_dial")
+    ) {
             val primaryColor = MaterialTheme.colorScheme.primary
             val surfaceColor = MaterialTheme.colorScheme.surface
             val onSurfaceColor = MaterialTheme.colorScheme.onSurface
@@ -282,59 +353,7 @@ fun QiblaScreen(
                     .align(Alignment.TopCenter)
             )
         }
-        } else {
-            LocationNeededCard(
-                onUseGps = requestLocation,
-                onChooseCity = { showLocationPickerSheet = true }
-            )
-        }
-
-        // Accuracy & Sensor Calibration Info
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier.padding(14.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Info,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        text = if (!isAvailable) {
-                            "Compass sensor not detected on this device. Point device according to angle."
-                        } else if (accuracy == SensorManager.SENSOR_STATUS_UNRELIABLE) {
-                            "Low compass accuracy. Wave device in a figure-8 pattern to calibrate."
-                        } else {
-                            "Hold your phone flat and away from magnetic objects for highest accuracy."
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f)
-                    )
-                }
-            }
-        }
-
-        if (showLocationPickerSheet) {
-            LocationPickerBottomSheet(
-                viewModel = viewModel,
-                onDismiss = { showLocationPickerSheet = false }
-            )
-        }
     }
-}
 
 private fun shortestAngleDelta(from: Float, to: Float): Float {
     var diff = (to - from) % 360f
