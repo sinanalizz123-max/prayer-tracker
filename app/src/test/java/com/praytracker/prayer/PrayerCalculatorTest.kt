@@ -171,6 +171,22 @@ class PrayerCalculatorTest {
     }
 
     @Test
+    fun `polar day and polar night do not crash and stay ordered`() {
+        // Longyearbyen is inside the Arctic Circle: midnight sun in June, polar
+        // night in December. The adhan library leaves boundaries undefined there,
+        // so the fallback anchors must keep the schedule monotonic and complete.
+        for ((month, settingsType) in listOf(6 to 1, 12 to 2)) {
+            val schedule = PrayerCalculator.calculateSchedule(
+                78.2232, 15.6469, "Arctic/Longyearbyen", LocalDate.of(2026, month, 21),
+                TestSettings(highLatitudeRule = settingsType, locationName = "Longyearbyen")
+            )
+            assertEquals(6, schedule.list.size)
+            val times = listOf(schedule.fajr, schedule.sunrise, schedule.dhuhr, schedule.asr, schedule.maghrib, schedule.isha)
+            assertEquals(times.sortedBy { it.toInstant() }, times)
+        }
+    }
+
+    @Test
     fun `high latitude location computes a full schedule`() {
         val schedule = PrayerCalculator.calculateSchedule(
             61.2181, -149.9003, "America/Anchorage", LocalDate.of(2026, 6, 21),

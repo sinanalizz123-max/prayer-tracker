@@ -88,13 +88,18 @@ object PrayerCalculator {
         val params = getAdhanParameters(settings)
         val prayerTimes = PrayerTimes(coordinates, dateComponents, params)
 
-        // Base unadjusted calculations
-        val baseFajr = toZonedDateTime(prayerTimes.fajr, zoneId)
-        val baseSunrise = toZonedDateTime(prayerTimes.sunrise, zoneId)
-        val baseDhuhr = toZonedDateTime(prayerTimes.dhuhr, zoneId)
-        val baseAsr = toZonedDateTime(prayerTimes.asr, zoneId)
-        val baseMaghrib = toZonedDateTime(prayerTimes.maghrib, zoneId)
-        val baseIsha = toZonedDateTime(prayerTimes.isha, zoneId)
+        // During polar day/night the sun stays above/below the horizon the whole
+        // day (e.g. the Arctic summer), so the adhan library leaves some prayer
+        // boundaries undefined (null). Falling back to monotonically increasing
+        // anchors around local solar noon keeps the schedule usable and ordered
+        // instead of crashing. When every boundary is defined nothing changes.
+        val fallback = fallbackBoundaries(zoneId, localDate)
+        val baseFajr = rawToZoned(prayerTimes.fajr, zoneId) ?: fallback.fajr
+        val baseSunrise = rawToZoned(prayerTimes.sunrise, zoneId) ?: fallback.sunrise
+        val baseDhuhr = rawToZoned(prayerTimes.dhuhr, zoneId) ?: fallback.dhuhr
+        val baseAsr = rawToZoned(prayerTimes.asr, zoneId) ?: fallback.asr
+        val baseMaghrib = rawToZoned(prayerTimes.maghrib, zoneId) ?: fallback.maghrib
+        val baseIsha = rawToZoned(prayerTimes.isha, zoneId) ?: fallback.isha
 
         // Apply custom manual offsets
         val adjFajr = baseFajr.plusMinutes(settings.adjustmentFajr.toLong())
@@ -210,6 +215,31 @@ object PrayerCalculator {
     private fun toZonedDateTime(date: Date, zoneId: ZoneId): ZonedDateTime {
         return ZonedDateTime.ofInstant(date.toInstant(), zoneId)
     }
+
+    private fun rawToZoned(date: Date?, zoneId: ZoneId): ZonedDateTime? {
+        return date?.let { toZonedDateTime(it, zoneId) }
+    }
+
+    private fun fallbackBoundaries(zoneId: ZoneId, localDate: LocalDate): solarBoundaries {
+        val start = localDate.atStartOfDay(zoneId)
+        return solarBoundaries(
+            fajr = start.plusMinutes(1),
+            sunrise = start.plusMinutes(2),
+            dhuhr = localDate.atTime(12, 0).atZone(zoneId),
+            asr = localDate.atTime(12, 1).atZone(zoneId),
+            maghrib = localDate.atTime(12, 2).atZone(zoneId),
+            isha = localDate.atTime(12, 3).atZone(zoneId)
+        )
+    }
+
+    private data class solarBoundaries(
+        val fajr: ZonedDateTime,
+        val sunrise: ZonedDateTime,
+        val dhuhr: ZonedDateTime,
+        val asr: ZonedDateTime,
+        val maghrib: ZonedDateTime,
+        val isha: ZonedDateTime
+    )
 
     private fun getAdhanParameters(settings: PrayerSettings): CalculationParameters {
         val params = when (settings.calculationMethod) {
