@@ -83,10 +83,10 @@ fun MainApp(viewModel: MainViewModel, settingsChanged: Long) {
                         unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = .6f),
                         unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = .6f)
                     )
-                    NavigationBarItem(currentTab == 0, { viewModel.selectTab(0) }, { Icon(Icons.Default.Schedule, "Prayers") }, { Text("Prayers", fontWeight = if (currentTab == 0) FontWeight.Bold else FontWeight.Medium) }, colors = colors, modifier = Modifier.testTag("tab_prayers"))
-                    NavigationBarItem(currentTab == 1, { viewModel.selectTab(1) }, { Icon(Icons.Default.TouchApp, "Tasbih") }, { Text("Tasbih", fontWeight = if (currentTab == 1) FontWeight.Bold else FontWeight.Medium) }, colors = colors, modifier = Modifier.testTag("tab_tasbih"))
-                    NavigationBarItem(currentTab == 2, { viewModel.selectTab(2) }, { Icon(Icons.Default.CompassCalibration, "Qibla") }, { Text("Qibla", fontWeight = if (currentTab == 2) FontWeight.Bold else FontWeight.Medium) }, colors = colors, modifier = Modifier.testTag("tab_qibla"))
-                    NavigationBarItem(currentTab == 3, { viewModel.selectTab(3) }, { Icon(Icons.Default.MoreHoriz, "More") }, { Text("More", fontWeight = if (currentTab == 3) FontWeight.Bold else FontWeight.Medium) }, colors = colors, modifier = Modifier.testTag("tab_more"))
+                    NavigationBarItem(selected = currentTab == 0, onClick = { viewModel.selectTab(0) }, icon = { Icon(Icons.Default.Schedule, "Prayers") }, label = { Text("Prayers", fontWeight = if (currentTab == 0) FontWeight.Bold else FontWeight.Medium) }, colors = colors, modifier = Modifier.testTag("tab_prayers"))
+                    NavigationBarItem(selected = currentTab == 1, onClick = { viewModel.selectTab(1) }, icon = { Icon(Icons.Default.TouchApp, "Tasbih") }, label = { Text("Tasbih", fontWeight = if (currentTab == 1) FontWeight.Bold else FontWeight.Medium) }, colors = colors, modifier = Modifier.testTag("tab_tasbih"))
+                    NavigationBarItem(selected = currentTab == 2, onClick = { viewModel.selectTab(2) }, icon = { Icon(Icons.Default.CompassCalibration, "Qibla") }, label = { Text("Qibla", fontWeight = if (currentTab == 2) FontWeight.Bold else FontWeight.Medium) }, colors = colors, modifier = Modifier.testTag("tab_qibla"))
+                    NavigationBarItem(selected = currentTab == 3, onClick = { viewModel.selectTab(3) }, icon = { Icon(Icons.Default.MoreHoriz, "More") }, label = { Text("More", fontWeight = if (currentTab == 3) FontWeight.Bold else FontWeight.Medium) }, colors = colors, modifier = Modifier.testTag("tab_more"))
                 }
             }) { innerPadding ->
                 Box(Modifier.fillMaxSize().padding(innerPadding)) {
