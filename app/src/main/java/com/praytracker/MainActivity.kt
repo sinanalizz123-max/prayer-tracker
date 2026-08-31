@@ -35,6 +35,7 @@ import com.praytracker.ui.MainViewModel
 import com.praytracker.ui.components.OnboardingDialog
 import com.praytracker.ui.screens.AboutScreen
 import com.praytracker.ui.screens.MoreScreen
+import com.praytracker.ui.screens.NotificationSettingsScreen
 import com.praytracker.ui.screens.PrayerTimesScreen
 import com.praytracker.ui.screens.QiblaScreen
 import com.praytracker.ui.screens.RamadanScreen
@@ -45,32 +46,16 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 
 class MainActivity : ComponentActivity() {
-
     private val viewModel: MainViewModel by viewModels()
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-
         setContent {
             val settingsChanged by viewModel.settings.settingsChanged.collectAsState()
-            // Theme is computed inside a flow at emission time (fresh getter), so the
-            // value composing state here always matches the last settings write.
-            val themeMode by viewModel.settings.settingsChanged
-                .map { viewModel.settings.appTheme }
-                .distinctUntilChanged()
+            val themeMode by viewModel.settings.settingsChanged.map { viewModel.settings.appTheme }.distinctUntilChanged()
                 .collectAsState(initial = viewModel.settings.appTheme)
-            val isDarkTheme = when (themeMode) {
-                "light" -> false
-                "dark" -> true
-                else -> isSystemInDarkTheme()
-            }
-
-            PrayerTimesTheme(darkTheme = isDarkTheme) {
-                // Reading and passing down settingsChanged subscribes this root scope to
-                // every settings write so preference getters are re-sampled on change.
-                MainApp(viewModel = viewModel, settingsChanged = settingsChanged)
-            }
+            val isDarkTheme = when (themeMode) { "light" -> false; "dark" -> true; else -> isSystemInDarkTheme() }
+            PrayerTimesTheme(darkTheme = isDarkTheme) { MainApp(viewModel, settingsChanged) }
         }
     }
 }
@@ -80,113 +65,36 @@ class MainActivity : ComponentActivity() {
 fun MainApp(viewModel: MainViewModel, settingsChanged: Long) {
     val currentTab by viewModel.currentTab.collectAsState()
     val currentSubPage by viewModel.currentMoreSubPage.collectAsState()
-
     var showOnboarding by remember { mutableStateOf(viewModel.settings.isFirstLaunch) }
+    if (showOnboarding) OnboardingDialog(viewModel = viewModel, onDismiss = { showOnboarding = false })
 
-    if (showOnboarding) {
-        OnboardingDialog(
-            viewModel = viewModel,
-            onDismiss = { showOnboarding = false }
-        )
-    }
-
-    // Subpage navigation routing
     when (currentSubPage) {
-        "SETTINGS" -> {
-            BackHandler { viewModel.selectMoreSubPage(null) }
-            SettingsScreen(
-                viewModel = viewModel,
-                onBack = { viewModel.selectMoreSubPage(null) },
-                onNavigateToAbout = { viewModel.selectMoreSubPage("ABOUT") }
-            )
-        }
-        "RAMADAN" -> {
-            BackHandler { viewModel.selectMoreSubPage(null) }
-            RamadanScreen(
-                viewModel = viewModel,
-                onBack = { viewModel.selectMoreSubPage(null) }
-            )
-        }
-        "ABOUT" -> {
-            BackHandler { viewModel.selectMoreSubPage(null) }
-            AboutScreen(
-                onBack = { viewModel.selectMoreSubPage(null) }
-            )
-        }
+        "SETTINGS" -> { BackHandler { viewModel.selectMoreSubPage(null) }; SettingsScreen(viewModel, { viewModel.selectMoreSubPage(null) }, { viewModel.selectMoreSubPage("ABOUT") }) }
+        "NOTIFICATIONS" -> { BackHandler { viewModel.selectMoreSubPage(null) }; NotificationSettingsScreen(viewModel) { viewModel.selectMoreSubPage(null) } }
+        "RAMADAN" -> { BackHandler { viewModel.selectMoreSubPage(null) }; RamadanScreen(viewModel) { viewModel.selectMoreSubPage(null) } }
+        "ABOUT" -> { BackHandler { viewModel.selectMoreSubPage(null) }; AboutScreen { viewModel.selectMoreSubPage(null) } }
         else -> {
-            Scaffold(
-                bottomBar = {
-                    NavigationBar(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        contentColor = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.testTag("bottom_navigation_bar")
-                    ) {
-                        val navItemColors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = MaterialTheme.colorScheme.primary,
-                            selectedTextColor = MaterialTheme.colorScheme.primary,
-                            indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                            unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                            unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
-
-                        NavigationBarItem(
-                            selected = currentTab == 0,
-                            onClick = { viewModel.selectTab(0) },
-                            icon = { Icon(imageVector = Icons.Default.Schedule, contentDescription = "Prayers") },
-                            label = { Text("Prayers", fontWeight = if (currentTab == 0) FontWeight.Bold else FontWeight.Medium) },
-                            colors = navItemColors,
-                            modifier = Modifier.testTag("tab_prayers")
-                        )
-                        NavigationBarItem(
-                            selected = currentTab == 1,
-                            onClick = { viewModel.selectTab(1) },
-                            icon = { Icon(imageVector = Icons.Default.TouchApp, contentDescription = "Tasbih") },
-                            label = { Text("Tasbih", fontWeight = if (currentTab == 1) FontWeight.Bold else FontWeight.Medium) },
-                            colors = navItemColors,
-                            modifier = Modifier.testTag("tab_tasbih")
-                        )
-                        NavigationBarItem(
-                            selected = currentTab == 2,
-                            onClick = { viewModel.selectTab(2) },
-                            icon = { Icon(imageVector = Icons.Default.CompassCalibration, contentDescription = "Qibla") },
-                            label = { Text("Qibla", fontWeight = if (currentTab == 2) FontWeight.Bold else FontWeight.Medium) },
-                            colors = navItemColors,
-                            modifier = Modifier.testTag("tab_qibla")
-                        )
-                        NavigationBarItem(
-                            selected = currentTab == 3,
-                            onClick = { viewModel.selectTab(3) },
-                            icon = { Icon(imageVector = Icons.Default.MoreHoriz, contentDescription = "More") },
-                            label = { Text("More", fontWeight = if (currentTab == 3) FontWeight.Bold else FontWeight.Medium) },
-                            colors = navItemColors,
-                            modifier = Modifier.testTag("tab_more")
-                        )
-                    }
+            Scaffold(bottomBar = {
+                NavigationBar(containerColor = MaterialTheme.colorScheme.surface, modifier = Modifier.testTag("bottom_navigation_bar")) {
+                    val colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = MaterialTheme.colorScheme.primary,
+                        selectedTextColor = MaterialTheme.colorScheme.primary,
+                        indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = .12f),
+                        unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = .6f),
+                        unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = .6f)
+                    )
+                    NavigationBarItem(currentTab == 0, { viewModel.selectTab(0) }, { Icon(Icons.Default.Schedule, "Prayers") }, { Text("Prayers", fontWeight = if (currentTab == 0) FontWeight.Bold else FontWeight.Medium) }, colors = colors, modifier = Modifier.testTag("tab_prayers"))
+                    NavigationBarItem(currentTab == 1, { viewModel.selectTab(1) }, { Icon(Icons.Default.TouchApp, "Tasbih") }, { Text("Tasbih", fontWeight = if (currentTab == 1) FontWeight.Bold else FontWeight.Medium) }, colors = colors, modifier = Modifier.testTag("tab_tasbih"))
+                    NavigationBarItem(currentTab == 2, { viewModel.selectTab(2) }, { Icon(Icons.Default.CompassCalibration, "Qibla") }, { Text("Qibla", fontWeight = if (currentTab == 2) FontWeight.Bold else FontWeight.Medium) }, colors = colors, modifier = Modifier.testTag("tab_qibla"))
+                    NavigationBarItem(currentTab == 3, { viewModel.selectTab(3) }, { Icon(Icons.Default.MoreHoriz, "More") }, { Text("More", fontWeight = if (currentTab == 3) FontWeight.Bold else FontWeight.Medium) }, colors = colors, modifier = Modifier.testTag("tab_more"))
                 }
-            ) { innerPadding ->
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding)
-                ) {
+            }) { innerPadding ->
+                Box(Modifier.fillMaxSize().padding(innerPadding)) {
                     when (currentTab) {
-                        0 -> PrayerTimesScreen(
-                            viewModel = viewModel,
-                            onNavigateToSettings = { viewModel.selectMoreSubPage("SETTINGS") },
-                            onNavigateToRamadan = { viewModel.selectMoreSubPage("RAMADAN") }
-                        )
-                        1 -> TasbihScreen(
-                            viewModel = viewModel
-                        )
-                        2 -> QiblaScreen(
-                            viewModel = viewModel
-                        )
-                        3 -> MoreScreen(
-                            viewModel = viewModel,
-                            onNavigateToSettings = { viewModel.selectMoreSubPage("SETTINGS") },
-                            onNavigateToRamadan = { viewModel.selectMoreSubPage("RAMADAN") },
-                            onNavigateToAbout = { viewModel.selectMoreSubPage("ABOUT") }
-                        )
+                        0 -> PrayerTimesScreen(viewModel, { viewModel.selectMoreSubPage("SETTINGS") }, { viewModel.selectMoreSubPage("RAMADAN") })
+                        1 -> TasbihScreen(viewModel)
+                        2 -> QiblaScreen(viewModel)
+                        3 -> MoreScreen(viewModel, { viewModel.selectMoreSubPage("SETTINGS") }, { viewModel.selectMoreSubPage("RAMADAN") }, { viewModel.selectMoreSubPage("ABOUT") }, { viewModel.selectMoreSubPage("NOTIFICATIONS") })
                     }
                 }
             }
