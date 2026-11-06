@@ -321,7 +321,7 @@ private fun CompassDial(viewModel: MainViewModel) {
                 val x = (center.x + textRadius * cos(angleRad)).toFloat()
                 val y = (center.y + textRadius * sin(angleRad)).toFloat()
                 
-                drawContext.canvas.drawText(
+                (drawContext.canvas as android.graphics.Canvas).drawText(
                     label,
                     x - 6.dp.toPx(),
                     y + 6.dp.toPx(),
