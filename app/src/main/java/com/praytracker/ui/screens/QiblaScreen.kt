@@ -7,6 +7,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.ui.graphics.Canvas as ComposeCanvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -48,6 +49,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -321,19 +323,18 @@ private fun CompassDial(viewModel: MainViewModel) {
                 val x = (center.x + textRadius * cos(angleRad)).toFloat()
                 val y = (center.y + textRadius * sin(angleRad)).toFloat()
                 
-                drawContext.canvas.nativeCanvas.apply {
-                    drawText(
-                        label,
-                        x - 6.dp.toPx(),
-                        y + 6.dp.toPx(),
-                        android.graphics.Paint().apply {
-                            textSize = 24.sp.toPx()
-                            color = primaryColor.toArgb()
-                            textAlign = android.graphics.Paint.Align.CENTER
-                            typeface = android.graphics.Typeface.create("sans-serif-condensed", android.graphics.Typeface.BOLD)
-                        }
-                    )
-                }
+                val nativeCanvas = drawContext.canvas.nativeCanvas
+                nativeCanvas.drawText(
+                    label,
+                    x - 6.dp.toPx(),
+                    y + 6.dp.toPx(),
+                    android.graphics.Paint().apply {
+                        textSize = 24.sp.toPx()
+                        color = primaryColor.toArgb()
+                        textAlign = android.graphics.Paint.Align.CENTER
+                        typeface = android.graphics.Typeface.create("sans-serif-condensed", android.graphics.Typeface.BOLD)
+                    }
+                )
             }
 
             // Degree Ticks - More elegant
