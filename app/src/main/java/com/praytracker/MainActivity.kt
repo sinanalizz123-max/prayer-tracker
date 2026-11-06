@@ -65,6 +65,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 @Suppress("UNUSED_PARAMETER")
 fun MainApp(viewModel: MainViewModel, settingsChanged: Long) {
+    val context = LocalContext.current
     val currentTab by viewModel.currentTab.collectAsState()
     val currentSubPage by viewModel.currentMoreSubPage.collectAsState()
     var showOnboarding by remember { mutableStateOf(viewModel.settings.isFirstLaunch) }
@@ -94,7 +95,6 @@ fun MainApp(viewModel: MainViewModel, settingsChanged: Long) {
                 Box(Modifier.fillMaxSize().padding(innerPadding)) {
                     when (currentTab) {
                         0 -> PrayerTimesScreen(viewModel, { viewModel.selectMoreSubPage("SETTINGS") }, { viewModel.selectMoreSubPage("RAMADAN") }, { 
-                            val context = LocalContext.current
                             val schedule = viewModel.prayerSchedule.value
                             val hijri = viewModel.hijriDate.value
                             if (schedule != null && hijri != null) {

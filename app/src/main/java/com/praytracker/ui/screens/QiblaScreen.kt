@@ -1,6 +1,5 @@
 package com.praytracker.ui.screens
 
-import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Typeface
 import android.hardware.SensorManager
@@ -274,19 +273,18 @@ private fun CompassDial(viewModel: MainViewModel) {
             val innerRadius = size.width / 2 - 80.dp.toPx()
 
             // Outer Ring - Gradient for Expressive look
-            val outerGradient = android.graphics.LinearGradient(
-                0f, 0f, size.width, size.height,
-                intArrayOf(
-                    android.graphics.Color.TRANSPARENT,
-                    primaryColor.copy(alpha = 0.1f).toArgb(),
-                    primaryColor.copy(alpha = 0.2f).toArgb()
+            val outerBrush = Brush.linearGradient(
+                colors = listOf(
+                    Color.Transparent,
+                    primaryColor.copy(alpha = 0.1f),
+                    primaryColor.copy(alpha = 0.2f)
                 ),
-                floatArrayOf(0f, 0.5f, 1f),
-                android.graphics.Shader.TileMode.CLAMP
+                start = Offset(0f, 0f),
+                end = Offset(size.width, size.height)
             )
             
             drawCircle(
-                brush = androidx.compose.ui.graphics.Brush.fromAndroidShader(outerGradient),
+                brush = outerBrush,
                 radius = outerRadius,
                 style = Stroke(width = 16.dp.toPx())
             )
