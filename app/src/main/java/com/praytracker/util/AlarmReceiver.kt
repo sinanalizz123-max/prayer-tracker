@@ -12,6 +12,7 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.praytracker.MainActivity
 import com.praytracker.data.SettingsManager
+import com.praytracker.util.AdhanPlayer
 
 class AlarmReceiver : BroadcastReceiver() {
 

@@ -7,12 +7,8 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Typeface
-import android.graphics.drawable.Drawable
 import android.net.Uri
-import android.os.Environment
-import androidx.compose.ui.graphics.toArgb
 import androidx.core.content.FileProvider
-import androidx.core.content.IntentCompat
 import com.praytracker.R
 import java.io.File
 import java.io.FileOutputStream
