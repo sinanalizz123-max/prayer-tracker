@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.1.0
+
+### New Features
+- **Imsak Time**: Added Suhoor stopping time (20 minutes before Fajr) to Ramadan mode with prominent red-highlighted card
+- **Jumu'ah Prayer**: Automatically displays Jumu'ah prayer on Fridays at Dhuhr time, with Dhuhr hidden on Fridays
+- **Islamic Events Calendar**: Enhanced with 20+ Islamic events (Eid al-Fitr, Eid al-Adha, Ashura, Mawlid, Isra & Mi'raj, etc.) with both English and Arabic names
+- **Adhan Audio**: Play Islamic call to prayer audio when prayer notifications fire, with volume control and reciter selection
+- **Share Prayer Times**: Generate and share beautiful prayer times image via WhatsApp or other apps with date, location, and Hijri date
+- **App Shortcuts**: Quick access to Prayer Times, Qibla Compass, Tasbih Counter, and Ramadan Mode from home screen
+- **Localization**: Added support for Arabic, Urdu, Malay, and Indonesian languages
+
+### Improvements
+- **Compass Visual**: Enhanced with Material 3 Expressive design featuring gradient ring, Kaaba cube symbol, cardinal directions (N, E, S, W), and improved readability
+- **Color Scheme**: Added custom color palette for better visual hierarchy
+- **UI/UX**: Improved overall user interface with better typography and spacing
+
+### Technical
+- Added FileProvider for image sharing
+- Added app shortcuts configuration
+- Prepared project structure for Wear OS support
+- Added string resources for multiple languages
+
 ## 1.0.3
 
 ### Performance
