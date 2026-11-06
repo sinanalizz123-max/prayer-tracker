@@ -27,14 +27,16 @@ class AlarmReceiver : BroadcastReceiver() {
         showNotification(context, prayerName, settings, isFollowUp)
 
         // Play Adhan audio if enabled
-        if (settings.isAdhanAudioEnabled && !isFollowUp) {
-            playAdhanAudio(context, prayerName, settings)
-        }
+        // Note: Requires raw audio files (adhan_fajr.mp3, etc.) in res/raw/
+        // if (settings.isAdhanAudioEnabled && !isFollowUp) {
+        //     playAdhanAudio(context, prayerName, settings)
+        // }
 
         // Self-healing: reschedule alarms for the next 24 hours
         AlarmScheduler.rescheduleAlarms(context, settings)
     }
     
+    /*
     private fun playAdhanAudio(context: Context, prayerName: String, settings: SettingsManager) {
         val adhanPlayer = AdhanPlayer(context)
         val adhanType = when (prayerName.uppercase()) {
@@ -49,6 +51,7 @@ class AlarmReceiver : BroadcastReceiver() {
         val volume = settings.adhanVolume / 100f
         adhanPlayer.playAdhan(adhanType, volume)
     }
+    */
 
     private fun showNotification(context: Context, prayerName: String, settings: SettingsManager, isFollowUp: Boolean) {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
