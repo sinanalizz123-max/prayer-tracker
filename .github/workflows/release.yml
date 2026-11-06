@@ -1,4 +1,4 @@
-name: Release signed APK
+name: Release APK
 
 on:
   push:
@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   release:
-    name: Build signed release APK
+    name: Build debug-signed APK
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -32,23 +32,12 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x gradlew
 
-      - name: Decode release keystore
-        shell: bash
+      - name: Build debug APK (signed with debug keystore)
+        run: ./gradlew :app:assembleDebug --stacktrace
+
+      - name: Rename APK for release
         run: |
-          printf '%s' '${{ secrets.PRAYTRACKER_KEYSTORE_BASE64 }}' \
-            | base64 -d > "$RUNNER_TEMP/prayer-tracker-release.jks"
-          chmod 600 "$RUNNER_TEMP/prayer-tracker-release.jks"
-
-      - name: Build signed release APK
-        env:
-          PRAYTRACKER_KEYSTORE_PATH: ${{ runner.temp }}/prayer-tracker-release.jks
-          PRAYTRACKER_KEYSTORE_PASSWORD: ${{ secrets.PRAYTRACKER_KEYSTORE_PASSWORD }}
-          PRAYTRACKER_KEY_ALIAS: ${{ secrets.PRAYTRACKER_KEY_ALIAS }}
-          PRAYTRACKER_KEY_PASSWORD: ${{ secrets.PRAYTRACKER_KEY_PASSWORD }}
-        run: ./gradlew :app:assembleRelease --stacktrace
-
-      - name: Verify APK signature
-        run: jarsigner -verify app/build/outputs/apk/release/app-release.apk
+          mv app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/release/PrayerTracker-${GITHUB_REF_NAME}.apk
 
       - name: Publish to GitHub Releases
         env:
@@ -56,10 +45,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          apk="app/build/outputs/apk/release/app-release.apk"
+          apk="app/build/outputs/apk/release/PrayerTracker-${GITHUB_REF_NAME}.apk"
           asset="PrayerTracker-${GITHUB_REF_NAME}.apk"
           title="Prayer Tracker ${GITHUB_REF_NAME}"
-          body="Signed release APK built by CI for tag ${GITHUB_REF_NAME}."
+          body="Debug-signed APK built by CI for tag ${GITHUB_REF_NAME}.
+          
+          Note: This APK is signed with the debug keystore and can be installed on any device for testing.
+          For production releases, use a proper release keystore."
           if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
             gh release upload "$GITHUB_REF_NAME" "${apk}#${asset}" --clobber
           else
