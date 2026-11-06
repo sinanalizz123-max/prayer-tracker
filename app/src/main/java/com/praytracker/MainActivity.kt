@@ -29,6 +29,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import com.praytracker.ui.MainViewModel
@@ -93,6 +94,7 @@ fun MainApp(viewModel: MainViewModel, settingsChanged: Long) {
                 Box(Modifier.fillMaxSize().padding(innerPadding)) {
                     when (currentTab) {
                         0 -> PrayerTimesScreen(viewModel, { viewModel.selectMoreSubPage("SETTINGS") }, { viewModel.selectMoreSubPage("RAMADAN") }, { 
+                            val context = LocalContext.current
                             val schedule = viewModel.prayerSchedule.value
                             val hijri = viewModel.hijriDate.value
                             if (schedule != null && hijri != null) {

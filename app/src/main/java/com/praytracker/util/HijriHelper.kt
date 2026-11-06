@@ -174,7 +174,7 @@ object HijriHelper {
                 formattedAr = "$arDay $monthNameAr $arYear هـ",
                 eventName = event,
                 eventNameAr = eventAr,
-                eventNameAr = eventAr
+                isRamadan = (month == 9)
             )
         } catch (e: Exception) {
             val event = getIslamicEvent(1, 1)

@@ -30,6 +30,10 @@ class AdhanPlayer(private val context: Context) {
     fun playAdhan(adhanType: AdhanType, volume: Float = 1.0f, loop: Boolean = false) {
         stopAdhan() // Stop any currently playing Adhan
         
+        // Note: Audio files not included in this version
+        // To enable Adhan audio, add MP3 files to res/raw/ directory
+        // and uncomment the following code:
+        /*
         val resourceId = when (adhanType) {
             AdhanType.FAJR -> R.raw.adhan_fajr
             AdhanType.DHUHR -> R.raw.adhan_dhuhr
@@ -40,6 +44,7 @@ class AdhanPlayer(private val context: Context) {
         }
         
         playAdhan(resourceId, volume, loop)
+        */
     }
     
     /**
@@ -57,8 +62,8 @@ class AdhanPlayer(private val context: Context) {
                     cleanup()
                 }
                 start()
-                isPlaying = true
             }
+            isPlaying = true
         } catch (e: Exception) {
             e.printStackTrace()
             cleanup()
@@ -78,8 +83,8 @@ class AdhanPlayer(private val context: Context) {
                     cleanup()
                 }
                 start()
-                isPlaying = true
             }
+            isPlaying = true
         } catch (e: Exception) {
             e.printStackTrace()
             cleanup()
@@ -104,9 +109,9 @@ class AdhanPlayer(private val context: Context) {
      */
     fun pauseAdhan() {
         mediaPlayer?.apply {
-            if (isPlaying) {
+            if (this@AdhanPlayer.isPlaying) {
                 pause()
-                isPlaying = false
+                this@AdhanPlayer.isPlaying = false
             }
         }
     }
@@ -116,9 +121,9 @@ class AdhanPlayer(private val context: Context) {
      */
     fun resumeAdhan() {
         mediaPlayer?.apply {
-            if (!isPlaying) {
+            if (!this@AdhanPlayer.isPlaying) {
                 start()
-                isPlaying = true
+                this@AdhanPlayer.isPlaying = true
             }
         }
     }
@@ -141,7 +146,7 @@ class AdhanPlayer(private val context: Context) {
     private fun cleanup() {
         mediaPlayer?.release()
         mediaPlayer = null
-        isPlaying = false
+        this.isPlaying = false
     }
     
     /**
