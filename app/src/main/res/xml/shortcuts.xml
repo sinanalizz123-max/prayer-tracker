@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <!-- Prayer Times Shortcut -->
+    <shortcut
+        android:shortcutId="prayer_times"
+        android:enabled="true"
+        android:icon="@drawable/ic_prayer_times"
+        android:shortcutShortLabel="@string/shortcut_prayer_times"
+        android:shortcutLongLabel="@string/shortcut_prayer_times_long"
+        android:shortcutDisabledMessage="@string/shortcut_prayer_times_disabled">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.praytracker"
+            android:targetClass="com.praytracker.MainActivity">
+            <extra
+                android:name="shortcut_id"
+                android:value="prayer_times" />
+        </intent>
+    </shortcut>
+    
+    <!-- Qibla Compass Shortcut -->
+    <shortcut
+        android:shortcutId="qibla"
+        android:enabled="true"
+        android:icon="@drawable/ic_qibla"
+        android:shortcutShortLabel="@string/shortcut_qibla"
+        android:shortcutLongLabel="@string/shortcut_qibla_long"
+        android:shortcutDisabledMessage="@string/shortcut_qibla_disabled">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.praytracker"
+            android:targetClass="com.praytracker.MainActivity">
+            <extra
+                android:name="shortcut_id"
+                android:value="qibla" />
+        </intent>
+    </shortcut>
+    
+    <!-- Tasbih Counter Shortcut -->
+    <shortcut
+        android:shortcutId="tasbih"
+        android:enabled="true"
+        android:icon="@drawable/ic_tasbih"
+        android:shortcutShortLabel="@string/shortcut_tasbih"
+        android:shortcutLongLabel="@string/shortcut_tasbih_long"
+        android:shortcutDisabledMessage="@string/shortcut_tasbih_disabled">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.praytracker"
+            android:targetClass="com.praytracker.MainActivity">
+            <extra
+                android:name="shortcut_id"
+                android:value="tasbih" />
+        </intent>
+    </shortcut>
+    
+    <!-- Ramadan Mode Shortcut -->
+    <shortcut
+        android:shortcutId="ramadan"
+        android:enabled="true"
+        android:icon="@drawable/ic_ramadan"
+        android:shortcutShortLabel="@string/shortcut_ramadan"
+        android:shortcutLongLabel="@string/shortcut_ramadan_long"
+        android:shortcutDisabledMessage="@string/shortcut_ramadan_disabled">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.praytracker"
+            android:targetClass="com.praytracker.MainActivity">
+            <extra
+                android:name="shortcut_id"
+                android:value="ramadan" />
+        </intent>
+    </shortcut>
+</shortcuts>

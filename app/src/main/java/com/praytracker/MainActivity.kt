@@ -42,6 +42,7 @@ import com.praytracker.ui.screens.RamadanScreen
 import com.praytracker.ui.screens.SettingsScreen
 import com.praytracker.ui.screens.TasbihScreen
 import com.praytracker.ui.theme.PrayerTimesTheme
+import com.praytracker.util.ShareUtils
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 
@@ -91,7 +92,13 @@ fun MainApp(viewModel: MainViewModel, settingsChanged: Long) {
             }) { innerPadding ->
                 Box(Modifier.fillMaxSize().padding(innerPadding)) {
                     when (currentTab) {
-                        0 -> PrayerTimesScreen(viewModel, { viewModel.selectMoreSubPage("SETTINGS") }, { viewModel.selectMoreSubPage("RAMADAN") })
+                        0 -> PrayerTimesScreen(viewModel, { viewModel.selectMoreSubPage("SETTINGS") }, { viewModel.selectMoreSubPage("RAMADAN") }, { 
+                            val schedule = viewModel.prayerSchedule.value
+                            val hijri = viewModel.hijriDate.value
+                            if (schedule != null && hijri != null) {
+                                ShareUtils.sharePrayerTimesAsImage(context, schedule, hijri)
+                            }
+                        })
                         1 -> TasbihScreen(viewModel)
                         2 -> QiblaScreen(viewModel)
                         3 -> MoreScreen(viewModel, { viewModel.selectMoreSubPage("SETTINGS") }, { viewModel.selectMoreSubPage("RAMADAN") }, { viewModel.selectMoreSubPage("ABOUT") }, { viewModel.selectMoreSubPage("NOTIFICATIONS") })

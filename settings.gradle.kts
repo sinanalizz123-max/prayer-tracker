@@ -22,3 +22,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "PrayerTracker"
 include(":app")
+// Wear OS module (optional - uncomment to enable)
+// include(":wear")

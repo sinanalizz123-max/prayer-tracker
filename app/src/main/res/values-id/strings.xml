@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Jadwal Sholat</string>
+    
+    <!-- App Shortcuts -->
+    <string name="shortcut_prayer_times">Jadwal Sholat</string>
+    <string name="shortcut_prayer_times_long">Lihat jadwal sholat hari ini</string>
+    <string name="shortcut_prayer_times_disabled">Jadwal sholat tidak tersedia</string>
+    
+    <string name="shortcut_qibla">Arah Kiblat</string>
+    <string name="shortcut_qibla_long">Temukan arah Ka\'bah</string>
+    <string name="shortcut_qibla_disabled">Arah kiblat tidak tersedia</string>
+    
+    <string name="shortcut_tasbih">Tasbih</string>
+    <string name="shortcut_tasbih_long">Hitung dzikir dan doa</string>
+    <string name="shortcut_tasbih_disabled">Tasbih tidak tersedia</string>
+    
+    <string name="shortcut_ramadan">Mode Ramadhan</string>
+    <string name="shortcut_ramadan_long">Lihat waktu puasa</string>
+    <string name="shortcut_ramadan_disabled">Mode Ramadhan tidak tersedia</string>
+    
+    <!-- Prayer Names -->
+    <string name="prayer_fajr">Subuh</string>
+    <string name="prayer_sunrise">Terbit</string>
+    <string name="prayer_dhuhr">Dzuhur</string>
+    <string name="prayer_jumuah">Jumat</string>
+    <string name="prayer_asr">Ashar</string>
+    <string name="prayer_maghrib">Maghrib</string>
+    <string name="prayer_isha">Isya</string>
+    
+    <!-- Share Feature -->
+    <string name="share_prayer_times">Bagikan Jadwal Sholat</string>
+    <string name="share_image_description">Jadwal sholat untuk %s</string>
+    
+    <!-- Adhan Audio -->
+    <string name="adhan_audio">Adzan</string>
+    <string name="play_adhan">Putar Adzan</string>
+    <string name="stop_adhan">Hentikan Adzan</string>
+    
+    <!-- Settings -->
+    <string name="settings_adhan_audio">Pengaturan Adzan</string>
+    <string name="settings_adhan_volume">Volume Adzan</string>
+    <string name="settings_adhan_selection">Pilih Qari</string>
+    
+    <!-- Islamic Events -->
+    <string name="islamic_events">Acara Islam</string>
+    <string name="eid_mubarak">Selamat Idul Fitri!</string>
+    <string name="ramadan_kareem">Selamat Menyambut Ramadhan!</string>
+</resources>

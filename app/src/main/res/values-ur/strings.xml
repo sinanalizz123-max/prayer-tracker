@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">نماز کے اوقات</string>
+    
+    <!-- App Shortcuts -->
+    <string name="shortcut_prayer_times">نماز کے اوقات</string>
+    <string name="shortcut_prayer_times_long">آج کے نماز کے شیڈول کو دیکھیں</string>
+    <string name="shortcut_prayer_times_disabled">نماز کے اوقات دستیاب نہیں</string>
+    
+    <string name="shortcut_qibla">قبله کی سمت</string>
+    <string name="shortcut_qibla_long">کعبہ کی سمت تلاش کریں</string>
+    <string name="shortcut_qibla_disabled">قبله کی سمت دستیاب نہیں</string>
+    
+    <string name="shortcut_tasbih">تسبیح</string>
+    <string name="shortcut_tasbih_long">اپنی ذکر اور نمازوں کو گنیں</string>
+    <string name="shortcut_tasbih_disabled">تسبیح دستیاب نہیں</string>
+    
+    <string name="shortcut_ramadan">رمضان موڈ</string>
+    <string name="shortcut_ramadan_long">رمضان کے روزوں کے اوقات دیکھیں</string>
+    <string name="shortcut_ramadan_disabled">رمضان موڈ دستیاب نہیں</string>
+    
+    <!-- Prayer Names -->
+    <string name="prayer_fajr">فجر</string>
+    <string name="prayer_sunrise">طلوع آفتاب</string>
+    <string name="prayer_dhuhr">ظہر</string>
+    <string name="prayer_jumuah">جمعه</string>
+    <string name="prayer_asr">عصر</string>
+    <string name="prayer_maghrib">مغرب</string>
+    <string name="prayer_isha">عشاء</string>
+    
+    <!-- Share Feature -->
+    <string name="share_prayer_times">نماز کے اوقات شیئر کریں</string>
+    <string name="share_image_description">%s کے لیے نماز کے اوقات</string>
+    
+    <!-- Adhan Audio -->
+    <string name="adhan_audio">اذان</string>
+    <string name="play_adhan">اذان چلائیں</string>
+    <string name="stop_adhan">اذان روکیں</string>
+    
+    <!-- Settings -->
+    <string name="settings_adhan_audio">اذان کی سیٹنگز</string>
+    <string name="settings_adhan_volume">اذان کی آواز</string>
+    <string name="settings_adhan_selection">قاری منتخب کریں</string>
+    
+    <!-- Islamic Events -->
+    <string name="islamic_events">اسلامی واقعات</string>
+    <string name="eid_mubarak">عید مبارک!</string>
+    <string name="ramadan_kareem">رمضان مبارک!</string>
+</resources>

@@ -33,7 +33,8 @@ object HijriHelper {
         val formattedEn: String,
         val formattedAr: String,
         val isRamadan: Boolean,
-        val eventName: String? = null
+        val eventName: String? = null,
+        val eventNameAr: String? = null
     )
 
     data class HijriCalendarDay(
@@ -67,24 +68,77 @@ object HijriHelper {
 
     fun getIslamicEvent(hijriMonth: Int, hijriDay: Int): String? {
         return when {
-            hijriMonth == 1 && hijriDay == 1 -> "Islamic New Year"
-            hijriMonth == 1 && hijriDay == 9 -> "Tasu'a"
-            hijriMonth == 1 && hijriDay == 10 -> "Day of Ashura"
-            hijriMonth == 3 && hijriDay == 12 -> "Mawlid an-Nabi"
-            hijriMonth == 7 && hijriDay == 27 -> "Isra & Mi'raj"
+            // Muharram (Month 1)
+            hijriMonth == 1 && hijriDay == 1 -> "Islamic New Year (1 Muharram)"
+            hijriMonth == 1 && hijriDay == 9 -> "Tasu'a (9 Muharram)"
+            hijriMonth == 1 && hijriDay == 10 -> "Day of Ashura (10 Muharram)"
+            
+            // Safar (Month 2)
+            hijriMonth == 2 && hijriDay == 20 -> "Arbaeen (20 Safar)"
+            
+            // Rabi' al-Awwal (Month 3)
+            hijriMonth == 3 && hijriDay == 12 -> "Mawlid an-Nabi (Birth of Prophet Muhammad)"
+            
+            // Rabi' al-Thani (Month 4)
+            
+            // Jumada al-Awwal (Month 5)
+            
+            // Jumada al-Thani (Month 6)
+            
+            // Rajab (Month 7)
+            hijriMonth == 7 && hijriDay == 1 -> "First of Rajab"
+            hijriMonth == 7 && hijriDay == 27 -> "Isra & Mi'raj (Night Journey)"
+            
+            // Sha'ban (Month 8)
+            hijriMonth == 8 && hijriDay == 1 -> "First of Sha'ban"
             hijriMonth == 8 && hijriDay == 15 -> "Laylat al-Bara'at (Nisf Sha'ban)"
-            hijriMonth == 9 && hijriDay == 1 -> "1st of Ramadan"
+            
+            // Ramadan (Month 9)
+            hijriMonth == 9 && hijriDay == 1 -> "First of Ramadan"
             hijriMonth == 9 && hijriDay == 27 -> "Laylat al-Qadr (Estimated)"
             hijriMonth == 9 && hijriDay in 21..29 && hijriDay % 2 != 0 -> "Odd Night (Laylat al-Qadr)"
+            
+            // Shawwal (Month 10)
             hijriMonth == 10 && hijriDay == 1 -> "Eid al-Fitr (Day 1)"
             hijriMonth == 10 && hijriDay == 2 -> "Eid al-Fitr (Day 2)"
             hijriMonth == 10 && hijriDay == 3 -> "Eid al-Fitr (Day 3)"
+            
+            // Dhu al-Qi'dah (Month 11)
+            hijriMonth == 11 && hijriDay == 1 -> "First of Dhu al-Qi'dah"
+            
+            // Dhu al-Hijjah (Month 12)
             hijriMonth == 12 && hijriDay == 1 -> "Start of 10 Days of Dhu al-Hijjah"
-            hijriMonth == 12 && hijriDay == 8 -> "Day of Tarwiyah"
-            hijriMonth == 12 && hijriDay == 9 -> "Day of Arafah"
+            hijriMonth == 12 && hijriDay == 8 -> "Day of Tarwiyah (8 Dhu al-Hijjah)"
+            hijriMonth == 12 && hijriDay == 9 -> "Day of Arafah (9 Dhu al-Hijjah)"
             hijriMonth == 12 && hijriDay == 10 -> "Eid al-Adha (Day 1)"
+            hijriMonth == 12 && hijriDay == 11 -> "Eid al-Adha (Day 2)"
+            hijriMonth == 12 && hijriDay == 12 -> "Eid al-Adha (Day 3)"
+            hijriMonth == 12 && hijriDay == 13 -> "Eid al-Adha (Day 4) / Days of Tashreeq"
             hijriMonth == 12 && hijriDay in 11..13 -> "Days of Tashreeq"
+            
+            // White Days (Ayyam al-Beed) - 13th, 14th, 15th of each lunar month
             hijriDay in 13..15 && hijriMonth != 9 -> "White Day (Ayyam al-Beed)"
+            
+            else -> null
+        }
+    }
+    
+    fun getIslamicEventArabic(hijriMonth: Int, hijriDay: Int): String? {
+        return when {
+            hijriMonth == 1 && hijriDay == 1 -> "رأس السنة الهجرية"
+            hijriMonth == 1 && hijriDay == 10 -> "عاشوراء"
+            hijriMonth == 3 && hijriDay == 12 -> "مولد النبي"
+            hijriMonth == 7 && hijriDay == 27 -> "الإسراء والمعراج"
+            hijriMonth == 8 && hijriDay == 15 -> "ليلة البراءة"
+            hijriMonth == 9 && hijriDay == 1 -> "أول رمضان"
+            hijriMonth == 9 && hijriDay == 27 -> "ليلة القدر (مقدرة)"
+            hijriMonth == 10 && hijriDay == 1 -> "عيد الفطر (اليوم الأول)"
+            hijriMonth == 10 && hijriDay == 2 -> "عيد الفطر (اليوم الثاني)"
+            hijriMonth == 10 && hijriDay == 3 -> "عيد الفطر (اليوم الثالث)"
+            hijriMonth == 12 && hijriDay == 9 -> "يوم عرفات"
+            hijriMonth == 12 && hijriDay == 10 -> "عيد الأضحى (اليوم الأول)"
+            hijriMonth == 12 && hijriDay in 11..13 -> "أيام التشريق"
+            hijriDay in 13..15 && hijriMonth != 9 -> "الأيام البيض"
             else -> null
         }
     }
@@ -108,6 +162,7 @@ object HijriHelper {
             val arDay = toArabicNumbers(day.toString())
             val arYear = toArabicNumbers(year.toString())
             val event = getIslamicEvent(month, day)
+            val eventAr = getIslamicEventArabic(month, day)
 
             HijriDateInfo(
                 day = day,
@@ -117,11 +172,13 @@ object HijriHelper {
                 monthNameAr = monthNameAr,
                 formattedEn = "$displayDay $monthNameEn $displayYear AH",
                 formattedAr = "$arDay $monthNameAr $arYear هـ",
-                isRamadan = (month == 9),
-                eventName = event
+                eventName = event,
+                eventNameAr = eventAr,
+                eventNameAr = eventAr
             )
         } catch (e: Exception) {
             val event = getIslamicEvent(1, 1)
+            val eventAr = getIslamicEventArabic(1, 1)
             HijriDateInfo(
                 day = 1,
                 month = 1,
@@ -131,7 +188,7 @@ object HijriHelper {
                 formattedEn = "1 Muharram 1448 AH",
                 formattedAr = "١ مُحَرَّم ١٤٤٨ هـ",
                 isRamadan = false,
-                eventName = event
+                eventName = event,
             )
         }
     }

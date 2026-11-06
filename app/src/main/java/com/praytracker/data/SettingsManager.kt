@@ -211,6 +211,28 @@ class SettingsManager(private val context: Context) : PrayerSettings {
             notifyChanged()
         }
 
+    // --- ADHAN AUDIO SETTINGS ---
+    var isAdhanAudioEnabled: Boolean
+        get() = prefs.getBoolean("adhan_audio_enabled", true)
+        set(value) {
+            prefs.edit().putBoolean("adhan_audio_enabled", value).apply()
+            notifyChanged()
+        }
+
+    var adhanVolume: Int
+        get() = prefs.getInt("adhan_volume", 80) // Default 80%
+        set(value) {
+            prefs.edit().putInt("adhan_volume", value.coerceIn(0, 100)).apply()
+            notifyChanged()
+        }
+
+    var adhanReciter: String
+        get() = prefs.getString("adhan_reciter", "default") ?: "default"
+        set(value) {
+            prefs.edit().putString("adhan_reciter", value).apply()
+            notifyChanged()
+        }
+
     // --- TASBIH SETTINGS ---
     var selectedTasbihId: Int
         get() = prefs.getInt("selected_tasbih_id", 1) // default preloaded ID is 1

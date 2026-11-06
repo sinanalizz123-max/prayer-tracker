@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.Nightlight
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.WbCloudy
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material.icons.filled.WbTwilight
@@ -68,6 +69,7 @@ fun PrayerTimesScreen(
     viewModel: MainViewModel,
     onNavigateToSettings: () -> Unit = {},
     onNavigateToRamadan: () -> Unit = {},
+    onSharePrayerTimes: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val schedule by viewModel.prayerSchedule.collectAsState()
@@ -179,6 +181,16 @@ fun PrayerTimesScreen(
                         Icon(
                             imageVector = Icons.Default.Settings,
                             contentDescription = "Settings",
+                            tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
+                        )
+                    }
+                    IconButton(
+                        onClick = onSharePrayerTimes,
+                        modifier = Modifier.testTag("share_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Share,
+                            contentDescription = "Share",
                             tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
                         )
                     }
@@ -383,6 +395,7 @@ fun PrayerItemRow(
         "FAJR" -> Icons.Default.Nightlight
         "SUNRISE" -> Icons.Default.WbSunny
         "DHUHR" -> Icons.Default.WbSunny
+        "JUMUAH" -> Icons.Default.WbSunny
         "ASR" -> Icons.Default.WbCloudy
         "MAGHRIB" -> Icons.Default.WbTwilight
         "ISHA" -> Icons.Default.Nightlight

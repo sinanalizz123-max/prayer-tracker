@@ -1,3 +1,48 @@
 <resources>
     <string name="app_name">Prayer Times</string>
+    
+    <!-- App Shortcuts -->
+    <string name="shortcut_prayer_times">Prayer Times</string>
+    <string name="shortcut_prayer_times_long">View today\'s prayer schedule</string>
+    <string name="shortcut_prayer_times_disabled">Prayer times unavailable</string>
+    
+    <string name="shortcut_qibla">Qibla Compass</string>
+    <string name="shortcut_qibla_long">Find the direction to Mecca</string>
+    <string name="shortcut_qibla_disabled">Compass unavailable</string>
+    
+    <string name="shortcut_tasbih">Tasbih Counter</string>
+    <string name="shortcut_tasbih_long">Count your dhikr and prayers</string>
+    <string name="shortcut_tasbih_disabled">Tasbih counter unavailable</string>
+    
+    <string name="shortcut_ramadan">Ramadan Mode</string>
+    <string name="shortcut_ramadan_long">View Ramadan fasting times</string>
+    <string name="shortcut_ramadan_disabled">Ramadan mode unavailable</string>
+    
+    <!-- Prayer Names -->
+    <string name="prayer_fajr">Fajr</string>
+    <string name="prayer_sunrise">Sunrise</string>
+    <string name="prayer_dhuhr">Dhuhr</string>
+    <string name="prayer_jumuah">Jumu\'ah</string>
+    <string name="prayer_asr">Asr</string>
+    <string name="prayer_maghrib">Maghrib</string>
+    <string name="prayer_isha">Isha</string>
+    
+    <!-- Share Feature -->
+    <string name="share_prayer_times">Share Prayer Times</string>
+    <string name="share_image_description">Prayer times for %s</string>
+    
+    <!-- Adhan Audio -->
+    <string name="adhan_audio">Adhan Audio</string>
+    <string name="play_adhan">Play Adhan</string>
+    <string name="stop_adhan">Stop Adhan</string>
+    
+    <!-- Settings -->
+    <string name="settings_adhan_audio">Adhan Audio Settings</string>
+    <string name="settings_adhan_volume">Adhan Volume</string>
+    <string name="settings_adhan_selection">Select Adhan Reciter</string>
+    
+    <!-- Islamic Events -->
+    <string name="islamic_events">Islamic Events</string>
+    <string name="eid_mubarak">Eid Mubarak!</string>
+    <string name="ramadan_kareem">Ramadan Kareem!</string>
 </resources>

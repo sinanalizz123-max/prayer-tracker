@@ -51,18 +51,21 @@ object PrayerCalculator {
         val fajr: ZonedDateTime,
         val sunrise: ZonedDateTime,
         val dhuhr: ZonedDateTime,
+        val jumuah: ZonedDateTime?,
         val asr: ZonedDateTime,
         val maghrib: ZonedDateTime,
         val isha: ZonedDateTime,
-        val list: List<PrayerItem>
+        val list: List<PrayerItem>,
+        val isFriday: Boolean = false
     )
 
     data class PrayerItem(
         val name: String,
-        val type: String, // "FAJR", "SUNRISE", "DHUHR", "ASR", "MAGHRIB", "ISHA"
+        val type: String, // "FAJR", "SUNRISE", "DHUHR", "JUMUAH", "ASR", "MAGHRIB", "ISHA"
         val time: ZonedDateTime,
         val formattedTime: String,
-        val isSunrise: Boolean = false
+        val isSunrise: Boolean = false,
+        val isJumuah: Boolean = false
     )
 
     data class NextPrayerInfo(
@@ -111,14 +114,29 @@ object PrayerCalculator {
 
         val timeFormatter = DateTimeFormatter.ofPattern("h:mm a", Locale.US)
 
-        val items = listOf(
-            PrayerItem("Fajr", "FAJR", adjFajr, adjFajr.format(timeFormatter)),
-            PrayerItem("Sunrise", "SUNRISE", adjSunrise, adjSunrise.format(timeFormatter), isSunrise = true),
-            PrayerItem("Dhuhr", "DHUHR", adjDhuhr, adjDhuhr.format(timeFormatter)),
-            PrayerItem("Asr", "ASR", adjAsr, adjAsr.format(timeFormatter)),
-            PrayerItem("Maghrib", "MAGHRIB", adjMaghrib, adjMaghrib.format(timeFormatter)),
-            PrayerItem("Isha", "ISHA", adjIsha, adjIsha.format(timeFormatter))
-        )
+        // Check if today is Friday (Jumu'ah day)
+        val isFriday = localDate.dayOfWeek == java.time.DayOfWeek.FRIDAY
+        
+        // For Jumu'ah (Friday), add Jumu'ah prayer at Dhuhr time and hide Dhuhr
+        val items = if (isFriday) {
+            listOf(
+                PrayerItem("Fajr", "FAJR", adjFajr, adjFajr.format(timeFormatter)),
+                PrayerItem("Sunrise", "SUNRISE", adjSunrise, adjSunrise.format(timeFormatter), isSunrise = true),
+                PrayerItem("Jumu'ah", "JUMUAH", adjDhuhr, adjDhuhr.format(timeFormatter), isJumuah = true),
+                PrayerItem("Asr", "ASR", adjAsr, adjAsr.format(timeFormatter)),
+                PrayerItem("Maghrib", "MAGHRIB", adjMaghrib, adjMaghrib.format(timeFormatter)),
+                PrayerItem("Isha", "ISHA", adjIsha, adjIsha.format(timeFormatter))
+            )
+        } else {
+            listOf(
+                PrayerItem("Fajr", "FAJR", adjFajr, adjFajr.format(timeFormatter)),
+                PrayerItem("Sunrise", "SUNRISE", adjSunrise, adjSunrise.format(timeFormatter), isSunrise = true),
+                PrayerItem("Dhuhr", "DHUHR", adjDhuhr, adjDhuhr.format(timeFormatter)),
+                PrayerItem("Asr", "ASR", adjAsr, adjAsr.format(timeFormatter)),
+                PrayerItem("Maghrib", "MAGHRIB", adjMaghrib, adjMaghrib.format(timeFormatter)),
+                PrayerItem("Isha", "ISHA", adjIsha, adjIsha.format(timeFormatter))
+            )
+        }
 
         val hijri = HijriHelper.getHijriDate(localDate, settings.hijriAdjustment)
 
@@ -134,10 +152,12 @@ object PrayerCalculator {
             fajr = adjFajr,
             sunrise = adjSunrise,
             dhuhr = adjDhuhr,
+            jumuah = if (isFriday) adjDhuhr else null,
             asr = adjAsr,
             maghrib = adjMaghrib,
             isha = adjIsha,
-            list = items
+            list = items,
+            isFriday = isFriday
         )
     }
 
@@ -165,14 +185,31 @@ object PrayerCalculator {
         tomorrowSchedule: PrayerSchedule,
         now: ZonedDateTime
     ): NextPrayerInfo {
-        val prospectivePrayers = listOf(
+        val prospectivePrayers = mutableListOf(
             Pair("FAJR", todaySchedule.fajr),
-            Pair("DHUHR", todaySchedule.dhuhr),
             Pair("ASR", todaySchedule.asr),
             Pair("MAGHRIB", todaySchedule.maghrib),
             Pair("ISHA", todaySchedule.isha),
             Pair("FAJR", tomorrowSchedule.fajr)
         )
+        
+        // Add Dhuhr or Jumu'ah based on day
+        if (todaySchedule.isFriday) {
+            todaySchedule.jumuah?.let { jumuahTime ->
+                prospectivePrayers.add(1, Pair("JUMUAH", jumuahTime))
+            }
+        } else {
+            prospectivePrayers.add(1, Pair("DHUHR", todaySchedule.dhuhr))
+        }
+        
+        // Add Dhuhr for tomorrow if needed
+        if (!tomorrowSchedule.isFriday) {
+            prospectivePrayers.add(Pair("DHUHR", tomorrowSchedule.dhuhr))
+        } else {
+            tomorrowSchedule.jumuah?.let { jumuahTime ->
+                prospectivePrayers.add(Pair("JUMUAH", jumuahTime))
+            }
+        }
 
         var nextPrayer: Pair<String, ZonedDateTime>? = null
         for (prayer in prospectivePrayers) {
@@ -205,6 +242,18 @@ object PrayerCalculator {
             now.isBefore(schedule.fajr) -> "Isha"
             now.isBefore(schedule.sunrise) -> "Fajr"
             now.isBefore(schedule.dhuhr) -> "Sunrise"
+            schedule.isFriday -> {
+                if (now.isBefore(schedule.asr)) "Jumu'ah" else getCurrentActivePrayerNonFriday(schedule, now)
+            }
+            now.isBefore(schedule.asr) -> "Dhuhr"
+            now.isBefore(schedule.maghrib) -> "Asr"
+            now.isBefore(schedule.isha) -> "Maghrib"
+            else -> "Isha"
+        }
+    }
+    
+    private fun getCurrentActivePrayerNonFriday(schedule: PrayerSchedule, now: ZonedDateTime): String {
+        return when {
             now.isBefore(schedule.asr) -> "Dhuhr"
             now.isBefore(schedule.maghrib) -> "Asr"
             now.isBefore(schedule.isha) -> "Maghrib"

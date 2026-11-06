@@ -225,7 +225,6 @@ private fun AlignmentStatusPill(viewModel: MainViewModel) {
         }
     }
 }
-
 @Composable
 private fun CompassDial(viewModel: MainViewModel) {
     val heading by viewModel.trueHeading.collectAsState()
@@ -234,8 +233,6 @@ private fun CompassDial(viewModel: MainViewModel) {
     val diff = normalizeAngle(qiblaAngle - heading)
     val isAligned = abs(diff) <= 3f || abs(diff - 360f) <= 3f
 
-    // Track the dial rotation continuously (unwrapped) and always animate the
-    // shortest angular path so crossing 359° -> 1° rotates by -2° instead of ~358°.
     val rotationState = remember { Animatable(0f) }
     LaunchedEffect(heading) {
         val current = rotationState.value
@@ -251,109 +248,215 @@ private fun CompassDial(viewModel: MainViewModel) {
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
-            .size(300.dp)
+            .size(320.dp)
             .testTag("compass_dial")
     ) {
-            val primaryColor = MaterialTheme.colorScheme.primary
-            val surfaceColor = MaterialTheme.colorScheme.surface
-            val onSurfaceColor = MaterialTheme.colorScheme.onSurface
+        val primaryColor = MaterialTheme.colorScheme.primary
+        val secondaryColor = MaterialTheme.colorScheme.secondary
+        val tertiaryColor = MaterialTheme.colorScheme.tertiary
+        val surfaceColor = MaterialTheme.colorScheme.surface
+        val onSurfaceColor = MaterialTheme.colorScheme.onSurface
 
-            // Outer dial with North marker and degree ticks
-            Canvas(
-                modifier = Modifier
-                    .size(280.dp)
-                    .rotate(rotationState.value)
-            ) {
-                val center = Offset(size.width / 2, size.height / 2)
-                val radius = size.width / 2 - 12.dp.toPx()
+        // Outer dial with North marker and degree ticks - Enhanced Material 3 Expressive
+        Canvas(
+            modifier = Modifier
+                .size(300.dp)
+                .rotate(rotationState.value)
+        ) {
+            val center = Offset(size.width / 2, size.height / 2)
+            val outerRadius = size.width / 2 - 16.dp.toPx()
+            val innerRadius = size.width / 2 - 80.dp.toPx()
 
-                // Background Circle
-                drawCircle(
-                    color = surfaceColor,
-                    radius = radius
-                )
+            // Outer Ring - Gradient for Expressive look
+            val outerGradient = android.graphics.LinearGradient(
+                0f, 0f, size.width, size.height,
+                intArrayOf(
+                    android.graphics.Color.TRANSPARENT,
+                    primaryColor.copy(alpha = 0.1f).toArgb(),
+                    primaryColor.copy(alpha = 0.2f).toArgb()
+                ),
+                floatArrayOf(0f, 0.5f, 1f),
+                android.graphics.Shader.TileMode.CLAMP
+            )
+            
+            drawCircle(
+                brush = androidx.compose.ui.graphics.Brush.fromAndroidShader(outerGradient),
+                radius = outerRadius,
+                style = Stroke(width = 16.dp.toPx())
+            )
 
-                // Dial Ring
-                drawCircle(
-                    color = onSurfaceColor.copy(alpha = 0.15f),
-                    radius = radius,
-                    style = Stroke(width = 2.dp.toPx())
-                )
+            // Main Dial Background with subtle pattern
+            drawCircle(
+                color = surfaceColor,
+                radius = innerRadius
+            )
 
-                // 36 Degree Ticks
-                for (i in 0 until 36) {
-                    val angleDeg = i * 10f
-                    val angleRad = Math.toRadians(angleDeg.toDouble() - 90)
-                    val isMajor = i % 9 == 0 // N, E, S, W
+            // Concentric circles for depth
+            drawCircle(
+                color = onSurfaceColor.copy(alpha = 0.05f),
+                radius = innerRadius - 20.dp.toPx(),
+                style = Stroke(width = 1.dp.toPx())
+            )
+            drawCircle(
+                color = onSurfaceColor.copy(alpha = 0.05f),
+                radius = innerRadius - 40.dp.toPx(),
+                style = Stroke(width = 1.dp.toPx())
+            )
 
-                    val tickLength = if (isMajor) 14.dp.toPx() else 6.dp.toPx()
-                    val startX = (center.x + (radius - tickLength) * cos(angleRad)).toFloat()
-                    val startY = (center.y + (radius - tickLength) * sin(angleRad)).toFloat()
-                    val endX = (center.x + radius * cos(angleRad)).toFloat()
-                    val endY = (center.y + radius * sin(angleRad)).toFloat()
-
-                    drawLine(
-                        color = if (i == 0) Color.Red else onSurfaceColor.copy(alpha = if (isMajor) 0.8f else 0.3f),
-                        start = Offset(startX, startY),
-                        end = Offset(endX, endY),
-                        strokeWidth = if (isMajor) 3.dp.toPx() else 1.5.dp.toPx()
-                    )
-                }
-
-                // Qibla Indicator Line & Kaaba Badge
-                rotate(qiblaAngle, pivot = center) {
-                    val qiblaRad = Math.toRadians(-90.0)
-                    val qiblaX = (center.x + (radius - 24.dp.toPx()) * cos(qiblaRad)).toFloat()
-                    val qiblaY = (center.y + (radius - 24.dp.toPx()) * sin(qiblaRad)).toFloat()
-
-                    // Gold / Primary Kaaba Needle
-                    val path = Path().apply {
-                        moveTo(center.x, center.y)
-                        lineTo(qiblaX - 8.dp.toPx(), qiblaY + 16.dp.toPx())
-                        lineTo(qiblaX, qiblaY)
-                        lineTo(qiblaX + 8.dp.toPx(), qiblaY + 16.dp.toPx())
-                        close()
-                    }
-                    drawPath(path, color = primaryColor)
-
-                    // Kaaba symbol circle at tip
-                    drawCircle(
-                        color = primaryColor,
-                        radius = 8.dp.toPx(),
-                        center = Offset(qiblaX, qiblaY)
-                    )
-                }
-            }
-
-            // Center Heading Badge (Fixed device orientation)
-            Box(
-                modifier = Modifier
-                    .size(64.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.background),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = "${heading.toInt()}°",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = alignmentColor
+            // Cardinal Directions with labels
+            val directions = listOf(
+                Pair(0f, "N"),
+                Pair(90f, "E"),
+                Pair(180f, "S"),
+                Pair(270f, "W")
+            )
+            
+            for ((angleDeg, label) in directions) {
+                val angleRad = Math.toRadians(angleDeg.toDouble() - 90)
+                val textRadius = innerRadius - 24.dp.toPx()
+                val x = (center.x + textRadius * cos(angleRad)).toFloat()
+                val y = (center.y + textRadius * sin(angleRad)).toFloat()
+                
+                drawContext.canvas.nativeCanvas.apply {
+                    drawText(
+                        label,
+                        x - 6.dp.toPx(),
+                        y + 6.dp.toPx(),
+                        android.graphics.Paint().apply {
+                            textSize = 24.sp.toPx()
+                            color = primaryColor.toArgb()
+                            textAlign = android.graphics.Paint.Align.CENTER
+                            typeface = android.graphics.Typeface.create("sans-serif-condensed", android.graphics.Typeface.BOLD)
+                        }
                     )
                 }
             }
 
-            // Fixed Top Device Pointer (North alignment marker)
+            // Degree Ticks - More elegant
+            for (i in 0 until 36) {
+                val angleDeg = i * 10f
+                val angleRad = Math.toRadians(angleDeg.toDouble() - 90)
+                val isMajor = i % 6 == 0
+
+                val tickLength = if (isMajor) 12.dp.toPx() else 6.dp.toPx()
+                val startRadius = innerRadius - tickLength
+                val startX = (center.x + startRadius * cos(angleRad)).toFloat()
+                val startY = (center.y + startRadius * sin(angleRad)).toFloat()
+                val endX = (center.x + innerRadius * cos(angleRad)).toFloat()
+                val endY = (center.y + innerRadius * sin(angleRad)).toFloat()
+
+                drawLine(
+                    color = if (i == 0) primaryColor else onSurfaceColor.copy(alpha = if (isMajor) 0.6f else 0.2f),
+                    start = Offset(startX, startY),
+                    end = Offset(endX, endY),
+                    strokeWidth = if (isMajor) 2.5.dp.toPx() else 1.5.dp.toPx()
+                )
+            }
+
+            // Qibla Indicator - Enhanced design with Kaaba symbol
+            rotate(qiblaAngle, pivot = center) {
+                val qiblaRad = Math.toRadians(-90.0)
+                val needleLength = innerRadius - 30.dp.toPx()
+                val qiblaX = (center.x + needleLength * cos(qiblaRad)).toFloat()
+                val qiblaY = (center.y + needleLength * sin(qiblaRad)).toFloat()
+
+                // Enhanced Kaaba Needle with gradient
+                val needlePath = Path().apply {
+                    moveTo(center.x, center.y)
+                    lineTo(qiblaX - 12.dp.toPx(), qiblaY)
+                    lineTo(qiblaX, qiblaY + 20.dp.toPx())
+                    lineTo(qiblaX + 12.dp.toPx(), qiblaY)
+                    close()
+                }
+                
+                drawPath(
+                    path = needlePath,
+                    brush = androidx.compose.ui.graphics.Brush.linearGradient(
+                        colors = listOf(primaryColor, secondaryColor),
+                        start = Offset(center.x, center.y),
+                        end = Offset(qiblaX, qiblaY)
+                    )
+                )
+
+                // Kaaba symbol - Cube shape
+                drawRoundRect(
+                    color = primaryColor,
+                    topLeft = Offset(qiblaX - 12.dp.toPx(), qiblaY - 12.dp.toPx()),
+                    size = androidx.compose.ui.geometry.Size(24.dp.toPx(), 24.dp.toPx()),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(4.dp.toPx())
+                )
+                
+                // Inner cube highlight
+                drawRoundRect(
+                    color = Color.White.copy(alpha = 0.4f),
+                    topLeft = Offset(qiblaX - 8.dp.toPx(), qiblaY - 8.dp.toPx()),
+                    size = androidx.compose.ui.geometry.Size(16.dp.toPx(), 16.dp.toPx()),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(2.dp.toPx())
+                )
+            }
+        }
+
+        // Center Heading Badge - Enhanced with Material 3 Expressive
+        Box(
+            modifier = Modifier
+                .size(80.dp)
+                .clip(CircleShape)
+                .background(
+                    androidx.compose.ui.graphics.Brush.radialGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.background,
+                            MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)
+                        )
+                    )
+                )
+                .align(Alignment.Center),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = "${heading.toInt()}°",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isAligned) primaryColor else alignmentColor
+                )
+                Text(
+                    text = "Qibla",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = alignmentColor.copy(alpha = 0.7f)
+                )
+            }
+        }
+
+        // Fixed Top Device Pointer - Enhanced
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 8.dp)
+        ) {
             Icon(
                 imageVector = Icons.Default.Navigation,
                 contentDescription = null,
-                tint = alignmentColor,
-                modifier = Modifier
-                    .size(24.dp)
-                    .align(Alignment.TopCenter)
+                tint = primaryColor,
+                modifier = Modifier.size(28.dp)
+            )
+        }
+
+        // Qibla Direction Text at bottom
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 16.dp)
+        ) {
+            Text(
+                text = "Qibla: ${qiblaAngle.toInt()}°",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = primaryColor
             )
         }
     }
+}
+
 
 private fun shortestAngleDelta(from: Float, to: Float): Float {
     var diff = (to - from) % 360f

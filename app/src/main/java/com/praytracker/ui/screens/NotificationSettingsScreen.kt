@@ -145,6 +145,60 @@ fun NotificationSettingsScreen(viewModel: MainViewModel, onBack: () -> Unit) {
                     )
                 }
             }
+            
+            // Adhan Audio Settings Section
+            if (master) {
+                item { Spacer(Modifier.height(8.dp)) }
+                item { 
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.MusicNote, null, tint = MaterialTheme.colorScheme.secondary)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Adhan Audio", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    }
+                }
+                item {
+                    SettingsToggleRow(
+                        "Play Adhan Audio",
+                        "Play Islamic call to prayer audio when prayer time arrives",
+                        settings.isAdhanAudioEnabled
+                    ) { 
+                        settings.isAdhanAudioEnabled = it
+                        viewModel.onSettingsChanged()
+                    }
+                }
+                if (settings.isAdhanAudioEnabled) {
+                    item {
+                        Column(Modifier.fillMaxWidth()) {
+                            Text("Adhan Volume: ${settings.adhanVolume}%", fontWeight = FontWeight.SemiBold)
+                            Slider(
+                                value = settings.adhanVolume.toFloat(),
+                                onValueChange = {
+                                    settings.adhanVolume = it.toInt()
+                                    viewModel.onSettingsChanged()
+                                },
+                                valueRange = 0f..100f,
+                                steps = 19
+                            )
+                        }
+                    }
+                    item {
+                        Row(
+                            Modifier.fillMaxWidth().clickable { /* TODO: Open reciter selection */ }.padding(vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.ChevronRight, null, tint = MaterialTheme.colorScheme.primary)
+                                Spacer(Modifier.width(8.dp))
+                                Column {
+                                    Text("Adhan Reciter", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                                    Text("Default (Mishary Rashid)", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             item { Spacer(Modifier.height(24.dp)) }
         }
     }

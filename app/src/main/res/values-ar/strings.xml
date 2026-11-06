@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">مواقيت الصلاة</string>
+    
+    <!-- App Shortcuts -->
+    <string name="shortcut_prayer_times">مواقيت الصلاة</string>
+    <string name="shortcut_prayer_times_long">عرض مواقيت الصلاة ليومك</string>
+    <string name="shortcut_prayer_times_disabled">مواقيت الصلاة غير متاحة</string>
+    
+    <string name="shortcut_qibla">اتجاه القبلة</string>
+    <string name="shortcut_qibla_long">ابحث عن اتجاه الكعبة</string>
+    <string name="shortcut_qibla_disabled">اتجاه القبلة غير متاح</string>
+    
+    <string name="shortcut_tasbih">مسبحة</string>
+    <string name="shortcut_tasbih_long">عد الأذكار والصلوات</string>
+    <string name="shortcut_tasbih_disabled">المسبحة غير متاحة</string>
+    
+    <string name="shortcut_ramadan">وضع رمضان</string>
+    <string name="shortcut_ramadan_long">عرض مواقيت الصيام</string>
+    <string name="shortcut_ramadan_disabled">وضع رمضان غير متاح</string>
+    
+    <!-- Prayer Names -->
+    <string name="prayer_fajr">الفجر</string>
+    <string name="prayer_sunrise">الشروق</string>
+    <string name="prayer_dhuhr">الظهيرة</string>
+    <string name="prayer_jumuah">جمعة</string>
+    <string name="prayer_asr">العصر</string>
+    <string name="prayer_maghrib">المغرب</string>
+    <string name="prayer_isha">العشاء</string>
+    
+    <!-- Share Feature -->
+    <string name="share_prayer_times">مشاركة مواقيت الصلاة</string>
+    <string name="share_image_description">مواقيت الصلاة لـ %s</string>
+    
+    <!-- Adhan Audio -->
+    <string name="adhan_audio">الأذان</string>
+    <string name="play_adhan">تشغيل الأذان</string>
+    <string name="stop_adhan">إيقاف الأذان</string>
+    
+    <!-- Settings -->
+    <string name="settings_adhan_audio">إعدادات الأذان</string>
+    <string name="settings_adhan_volume"> مستوى صوت الأذان</string>
+    <string name="settings_adhan_selection">اختر القارئ</string>
+    
+    <!-- Islamic Events -->
+    <string name="islamic_events">الأحداث الإسلامية</string>
+    <string name="eid_mubarak">عيد مبارك!</string>
+    <string name="ramadan_kareem">رمضان كريم!</string>
+</resources>
